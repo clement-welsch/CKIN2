@@ -110,7 +110,7 @@ CKIN2/
 │   ├── analysis/
 │   └── visualization/
 │
-├── tests/
+├── test/
 │
 ├── .gitignore
 ├── README.md
