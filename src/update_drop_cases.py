@@ -1,21 +1,24 @@
 import requests
-import pandas as pd
 
-url = "https://steamcommunity.com/market/priceoverview/"
+def connect_to_steam(name_case):
+    appid = 730
+    currency = 3
+    market_hash_name = name_case
+    market_hash_name += " Case"
+    url = "https://steamcommunity.com/market/priceoverview/"
 
-#inventory = pd.read_csv("../data/processed/drop_cases_inventory.csv")
-#price_history = pd.read_csv("../data/processed/drop_cases_prices.csv")
+    params = {
+    "appid": appid,
+    "currency": currency,
+    "market_hash_name": market_hash_name
+    }
 
-appid = 730
-currency = 3
-market_hash_name = "Dreams & Nightmares"
-market_hash_name += " Case"
-market_hash_name = str.replace(market_hash_name, " ", "%20")
-market_hash_name = str.replace(market_hash_name, "&", "%26")
-print(market_hash_name)
-print("https://steamcommunity.com/market/listings/730/Dreams%20%26%20Nightmares%20Case")
-url = f"https://steamcommunity.com/market/listings/{appid}/{market_hash_name}"
-print(url)
-cookie = {'steamLogin': '686MadeInFrance686'}    
-data = requests.get(url, cookies=cookie)
-print(data)
+    response = requests.get(url, params=params, timeout=10)
+    print(response.status_code)
+    print(response.text)
+
+def get_price_for_case(name_case):
+    connect_to_steam(name_case)
+    return 0
+
+get_price_for_case("Dreams & Nightmares")
