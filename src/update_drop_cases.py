@@ -1,5 +1,6 @@
 import pandas as pd
 import requests
+from datetime import date
 
 # ENVIRONMENT = "home"
 ENVIRONMENT = "school"
@@ -34,8 +35,25 @@ def get_price_for_case(case_name, price_history):
         price = price_history[price_history["case_name"] == case_name].tail(1)["unit_price"].iloc[0]
         return price
 
-list_cases = inventory["case_name"].unique()
+def main():
+    list_cases = inventory["case_name"].unique()
 
-for case_name in list_cases:
-    new_price = get_price_for_case(case_name, price_history)
-    print(case_name, new_price)
+    new_rows = []
+    for case_name in list_cases:
+        new_price = get_price_for_case(case_name, price_history)
+        new_row = {
+            "date": date.today(),
+            "case_name": case_name,
+            "unit_price": new_price
+        }
+        new_rows.append(new_row)
+
+    new_prices = pd.DataFrame(new_rows)
+    new_prices.to_csv(
+        "./data/processed/drop_cases_prices.csv",
+        mode="a",
+        header=False,
+        index=False
+    )
+
+main()
