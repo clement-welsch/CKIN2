@@ -1,0 +1,147 @@
+date,case_name,unit_price
+2025-09-17,Dreams & Nightmares,1.65
+2025-10-27,Dreams & Nightmares,1.84
+2025-11-22,Dreams & Nightmares,1.66
+2025-12-03,Dreams & Nightmares,1.52
+2025-12-18,Dreams & Nightmares,1.46
+2026-01-14,Dreams & Nightmares,1.41
+2026-02-13,Dreams & Nightmares,1.45
+2026-03-03,Dreams & Nightmares,1.55
+2026-03-13,Dreams & Nightmares,1.68
+2026-03-31,Dreams & Nightmares,1.88
+2026-05-05,Dreams & Nightmares,1.90
+2026-06-11,Dreams & Nightmares,1.65
+2026-07-01,Dreams & Nightmares,1.46
+2026-08-17,Dreams & Nightmares,1.47
+2025-09-17,Fever,0.92
+2025-10-27,Fever,0.85
+2025-11-22,Fever,0.80
+2025-12-03,Fever,0.78
+2025-12-18,Fever,0.77
+2026-01-14,Fever,0.78
+2026-02-13,Fever,0.80
+2026-03-03,Fever,0.81
+2026-03-13,Fever,0.83
+2026-03-31,Fever,0.84
+2026-05-05,Fever,0.78
+2026-06-11,Fever,0.77
+2026-07-01,Fever,0.78
+2026-08-17,Fever,0.76
+2025-09-17,Fracture,0.62
+2025-10-27,Fracture,0.60
+2025-11-22,Fracture,0.55
+2025-12-03,Fracture,0.54
+2025-12-18,Fracture,0.52
+2026-01-14,Fracture,0.61
+2026-02-13,Fracture,0.58
+2026-03-03,Fracture,0.65
+2026-03-13,Fracture,0.72
+2026-03-31,Fracture,0.74
+2026-05-05,Fracture,0.85
+2026-06-11,Fracture,0.77
+2026-07-01,Fracture,0.69
+2026-08-17,Fracture,0.63
+2025-09-17,Gallery,1.43
+2025-10-27,Gallery,1.21
+2025-11-22,Gallery,1.20
+2025-12-03,Gallery,1.33
+2025-12-18,Gallery,1.46
+2026-01-14,Gallery,1.34
+2026-02-13,Gallery,1.21
+2026-03-03,Gallery,1.17
+2026-03-13,Gallery,1.21
+2026-03-31,Gallery,1.24
+2026-05-05,Gallery,1.35
+2026-06-11,Gallery,1.23
+2026-07-01,Gallery,1.10
+2026-08-17,Gallery,0.94
+2026-03-31,Horizon,2.20
+2026-05-05,Horizon,2.56
+2026-06-11,Horizon,2.46
+2026-07-01,Horizon,2.14
+2026-08-17,Horizon,2.01
+2025-09-17,Kilowatt,0.43
+2025-10-27,Kilowatt,0.43
+2025-11-22,Kilowatt,0.34
+2025-12-03,Kilowatt,0.29
+2025-12-18,Kilowatt,0.25
+2026-01-14,Kilowatt,0.29
+2026-02-13,Kilowatt,0.25
+2026-03-03,Kilowatt,0.24
+2026-03-13,Kilowatt,0.26
+2026-03-31,Kilowatt,0.31
+2026-05-05,Kilowatt,0.31
+2026-06-11,Kilowatt,0.25
+2026-07-01,Kilowatt,0.20
+2026-08-17,Kilowatt,0.19
+2026-01-14,Prisma,1.64
+2026-02-13,Prisma,1.66
+2026-03-03,Prisma,1.74
+2026-03-13,Prisma,1.95
+2026-03-31,Prisma,2.26
+2026-05-05,Prisma,2.03
+2026-06-11,Prisma,1.74
+2026-07-01,Prisma,1.75
+2026-08-17,Prisma,1.75
+2026-01-14,Prisma 2,1.75
+2026-02-13,Prisma 2,1.84
+2026-03-03,Prisma 2,1.73
+2026-03-13,Prisma 2,1.88
+2026-03-31,Prisma 2,2.24
+2026-05-05,Prisma 2,2.04
+2026-06-11,Prisma 2,1.74
+2026-07-01,Prisma 2,1.67
+2026-08-17,Prisma 2,1.67
+2025-09-17,Recoil,0.34
+2025-10-27,Recoil,0.41
+2025-11-22,Recoil,0.32
+2025-12-03,Recoil,0.34
+2025-12-18,Recoil,0.31
+2026-01-14,Recoil,0.36
+2026-02-13,Recoil,0.28
+2026-03-03,Recoil,0.29
+2026-03-13,Recoil,0.50
+2026-03-31,Recoil,0.46
+2026-05-05,Recoil,0.54
+2026-06-11,Recoil,0.49
+2026-07-01,Recoil,0.39
+2026-08-17,Recoil,0.39
+2025-09-17,Revolution,0.47
+2025-10-27,Revolution,0.49
+2025-11-22,Revolution,0.36
+2025-12-03,Revolution,0.36
+2025-12-18,Revolution,0.32
+2026-01-14,Revolution,0.35
+2026-02-13,Revolution,0.29
+2026-03-03,Revolution,0.29
+2026-03-13,Revolution,0.35
+2026-03-31,Revolution,0.42
+2026-05-05,Revolution,0.41
+2026-06-11,Revolution,0.37
+2026-07-01,Revolution,0.39
+2026-08-17,Revolution,0.30
+2026-03-31,Sealed Dead Hand Terminal,4.92
+2026-05-05,Sealed Dead Hand Terminal,2.58
+2026-06-11,Sealed Dead Hand Terminal,1.41
+2026-07-01,Sealed Dead Hand Terminal,1.41
+2026-08-17,Sealed Dead Hand Terminal,0.65
+2026-01-14,Sealed Genesis Terminal,0.37
+2026-02-13,Sealed Genesis Terminal,0.25
+2026-03-03,Sealed Genesis Terminal,0.24
+2026-03-13,Sealed Genesis Terminal,0.41
+2026-03-31,Sealed Genesis Terminal,0.34
+2026-05-05,Sealed Genesis Terminal,0.21
+2026-06-11,Sealed Genesis Terminal,0.15
+2026-07-01,Sealed Genesis Terminal,0.14
+2026-08-17,Sealed Genesis Terminal,0.10
+2025-12-03,Snakebite,0.69
+2025-12-18,Snakebite,0.64
+2026-01-14,Snakebite,0.74
+2026-02-13,Snakebite,0.69
+2026-03-03,Snakebite,0.77
+2026-03-13,Snakebite,0.76
+2026-03-31,Snakebite,0.76
+2026-05-05,Snakebite,0.85
+2026-06-11,Snakebite,0.74
+2026-07-01,Snakebite,0.66
+2026-08-17,Snakebite,0.57
