@@ -226,15 +226,31 @@ The project will progressively evolve into a complete skin portfolio tracking an
 
 ### V2 — Analysis
 
-* [ ] Calculate current inventory value
+* [x] Calculate current inventory value
 * [ ] Calculate profit / loss
-* [ ] Analyze portfolio performance
+* [x] Analyze portfolio performance
 * [ ] Analyze individual skins
+
+Run the portfolio report from the project root once a month, after updating
+`data/processed/drop_cases_inventory.csv` with current quantities. In `home`
+mode, it retrieves prices, calculates the current inventory value, and saves
+that month's inventory snapshot to
+`data/processed/drop_cases_inventory_history.csv`. Running it again in the same
+month replaces that month's snapshot. Historical values use the latest recorded
+price on or before each snapshot date. In `school` mode, it values the inventory
+with the latest saved prices. Since those prices were not freshly retrieved
+from Steam, school mode is fully read-only: it does not write price history or
+inventory snapshots.
+
+```powershell
+python src/portfolio_report.py home
+python src/portfolio_report.py school
+```
 
 ### V3 — Visualization
 
-* [ ] Portfolio value chart
-* [ ] Price evolution charts
+* [x] Portfolio value chart
+* [x] Price evolution charts
 * [ ] Skin comparison charts
 * [ ] Dashboard
 
@@ -250,6 +266,7 @@ The project will progressively evolve into a complete skin portfolio tracking an
 * [ ] Trend indicators
 * [ ] Volatility / risk analysis
 * [ ] Buy / sell / hold decision-support tools
+* [ ] Use scikit-learn to forecast price or portfolio-value changes between monthly CKIN2 updates once enough history has been collected
 
 ---
 
