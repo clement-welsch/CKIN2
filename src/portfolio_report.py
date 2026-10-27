@@ -10,6 +10,7 @@ from analyze_drop_cases import (
     PRICE_HISTORY_PATH,
     calculate_historical_portfolio_value,
     calculate_inventory_value,
+    print_inventory_value_summary,
     save_monthly_inventory_snapshot,
 )
 from update_drop_cases import Environment, main as update_prices
@@ -51,15 +52,7 @@ def main(environment):
     print("\nCurrent inventory valuation")
     print(valuation.to_string(index=False, na_rep="N/A"))
 
-    total = valuation["market_value"].sum(min_count=1)
-    if pd.isna(total):
-        print("\nTotal inventory value: unavailable (no valid prices)")
-    else:
-        print(f"\nTotal inventory value: {total:,.2f} EUR")
-
-    missing = valuation.loc[valuation["unit_price"].isna(), "case_name"].tolist()
-    if missing:
-        print("Cases without a valid price: " + ", ".join(missing))
+    print_inventory_value_summary(valuation)
 
     stale = valuation.loc[
         valuation["price_date"].notna()

@@ -247,6 +247,18 @@ python src/portfolio_report.py home
 python src/portfolio_report.py school
 ```
 
+Reports distinguish `known_value` (the subtotal of priced holdings) from
+`total_value` (available only when every held item has a price). Price coverage
+counts held item types, not units. Zero-quantity rows do not require a price;
+an empty inventory has a complete value of zero. When no held item can be
+priced, both values are unavailable rather than zero.
+
+The same rules apply to monthly snapshots. Historical totals remain unavailable
+on incomplete dates, and the notebook does not calculate changes across those
+gaps. Notebook weights are percentages of known value, excluding unpriced
+holdings. Changes between snapshot totals also reflect quantity changes and
+must not be interpreted as investment returns.
+
 ### V3 — Visualization
 
 * [x] Portfolio value chart

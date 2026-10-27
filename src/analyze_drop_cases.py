@@ -42,6 +42,43 @@ def calculate_inventory_value(
     return result
 
 
+def summarize_inventory_value(valuation: pd.DataFrame) -> dict:
+    """Separate known value from a complete total, counting only held items.
+
+    An empty inventory has a complete value of zero. Zero-quantity rows do not
+    require a price. Coverage counts item types, rather than individual units.
+    """
+    held = valuation.loc[valuation["quantity"] != 0]
+    priced = held["market_value"].notna()
+    missing = int((~priced).sum())
+    known = float(held["market_value"].sum(min_count=1)) if len(held) else 0.0
+    return {
+        "known_value": known,
+        "total_value": known if missing == 0 else float("nan"),
+        "priced_cases": int(priced.sum()),
+        "total_cases": len(held),
+        "cases_without_price": missing,
+    }
+
+
+def print_inventory_value_summary(valuation: pd.DataFrame) -> None:
+    """Print coverage and label a partial valuation explicitly."""
+    summary = summarize_inventory_value(valuation)
+    print(f"\nPrice coverage: {summary['priced_cases']}/{summary['total_cases']} held item types")
+    if summary["cases_without_price"] == 0:
+        print(f"Total inventory value: {summary['total_value']:,.2f} EUR")
+    else:
+        if pd.isna(summary["known_value"]):
+            print("Known inventory value: unavailable (no valid prices)")
+        else:
+            print(f"Known inventory value (partial): {summary['known_value']:,.2f} EUR")
+        print("Total inventory value: unavailable (incomplete price coverage)")
+        missing = valuation.loc[
+            (valuation["quantity"] != 0) & valuation["market_value"].isna(), "case_name"
+        ].tolist()
+        print("Cases without a valid price: " + ", ".join(missing))
+
+
 def save_monthly_inventory_snapshot(
     inventory: pd.DataFrame,
     snapshot_date: str | pd.Timestamp,
@@ -104,14 +141,16 @@ def calculate_historical_portfolio_value(
         valued_snapshots.append(case_snapshots)
 
     if not valued_snapshots:
-        return pd.DataFrame(columns=["snapshot_date", "total_value", "cases_without_price"])
+        return pd.DataFrame(columns=[
+            "snapshot_date", "known_value", "total_value", "priced_cases",
+            "total_cases", "cases_without_price",
+        ])
 
     details = pd.concat(valued_snapshots, ignore_index=True)
-    totals = details.groupby("snapshot_date").agg(
-        total_value=("market_value", lambda values: values.sum(min_count=1)),
-        cases_without_price=("unit_price", lambda values: int(values.isna().sum())),
-    )
-    return totals.reset_index().sort_values("snapshot_date")
+    return pd.DataFrame([
+        {"snapshot_date": snapshot_date, **summarize_inventory_value(group)}
+        for snapshot_date, group in details.groupby("snapshot_date", sort=True)
+    ])
 
 
 def main() -> None:
@@ -120,15 +159,7 @@ def main() -> None:
     valuation = calculate_inventory_value(inventory, price_history)
 
     print(valuation.to_string(index=False, na_rep="N/A"))
-    total = valuation["market_value"].sum(min_count=1)
-    if pd.isna(total):
-        print("\nTotal inventory value: unavailable (no valid prices)")
-    else:
-        print(f"\nTotal inventory value: {total:,.2f} EUR")
-
-    missing = valuation.loc[valuation["unit_price"].isna(), "case_name"].tolist()
-    if missing:
-        print("Cases without a valid price: " + ", ".join(missing))
+    print_inventory_value_summary(valuation)
 
 
 if __name__ == "__main__":
