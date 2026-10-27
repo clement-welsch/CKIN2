@@ -275,6 +275,20 @@ if those prices conflict. Input DataFrames and source CSV files are not cleaned
 or rewritten by the calculation functions. Snapshot saving validates both the
 incoming inventory and existing history before writing.
 
+Run the automated tests from the project root with Python 3.10 or later and
+Pandas/NumPy available:
+
+```powershell
+python -B -m unittest discover -s test -v
+```
+
+Tests use synthetic inputs and temporary files under `test/`; they do not
+contact Steam or write to `data/`. Coverage includes partial valuations, invalid
+inputs, school-mode read-only behavior, monthly snapshot replacement, retention
+of other months and years, repeat-run idempotence, and valuation using each
+snapshot's own holdings. Selected notebook calculation cells are checked with
+synthetic data; this does not replace a full notebook run with local CSV files.
+
 ### V3 — Visualization
 
 * [x] Portfolio value chart
