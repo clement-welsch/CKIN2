@@ -1,6 +1,9 @@
 """Calculate the current market value of the drop-case inventory."""
 
+from math import isfinite
+from numbers import Number
 from pathlib import Path
+import warnings
 
 import pandas as pd
 
@@ -11,18 +14,92 @@ PRICE_HISTORY_PATH = PROJECT_ROOT / "data" / "processed" / "drop_cases_prices.cs
 INVENTORY_HISTORY_PATH = PROJECT_ROOT / "data" / "processed" / "drop_cases_inventory_history.csv"
 
 
+def _require_columns(frame: pd.DataFrame, columns: list[str], label: str) -> None:
+    missing = sorted(set(columns) - set(frame.columns))
+    if missing:
+        raise ValueError(f"{label}: missing columns: {', '.join(missing)}")
+
+
+def _validate_names(frame: pd.DataFrame, label: str) -> None:
+    valid = frame["case_name"].map(
+        lambda name: isinstance(name, str) and bool(name.strip()) and name == name.strip()
+    )
+    if not valid.all():
+        raise ValueError(f"{label}: case_name must be a nonempty string without surrounding whitespace")
+
+
+def _parse_dates(values: pd.Series, label: str) -> pd.Series:
+    def parse(value):
+        if isinstance(value, (Number, bool)):
+            raise ValueError(f"{label}: dates must not be numeric")
+        try:
+            stamp = pd.Timestamp(value)
+        except (ValueError, TypeError, OverflowError) as error:
+            raise ValueError(f"{label}: invalid date") from error
+        if pd.isna(stamp) or stamp.tzinfo is not None:
+            raise ValueError(f"{label}: dates must be present and timezone-naive")
+        return stamp
+
+    return pd.to_datetime(values.map(parse))
+
+
+def _parse_numbers(values: pd.Series, label: str, *, quantity: bool = False) -> pd.Series:
+    if values.map(lambda value: isinstance(value, bool)).any():
+        raise ValueError(f"{label}: boolean values are not allowed")
+    try:
+        numbers = pd.to_numeric(values, errors="raise")
+    except (ValueError, TypeError) as error:
+        raise ValueError(f"{label}: expected numeric values") from error
+    present = numbers.dropna()
+    if not present.map(lambda value: isfinite(value) and value >= 0).all():
+        raise ValueError(f"{label}: values must be finite and nonnegative")
+    if quantity and (numbers.isna().any() or (present % 1 != 0).any()):
+        raise ValueError(f"{label}: quantities must be present whole numbers")
+    return numbers
+
+
+def prepare_inventory(inventory: pd.DataFrame, *, historical: bool = False) -> pd.DataFrame:
+    """Validate holdings without normalizing or merging distinct identifiers."""
+    label = "Inventory history" if historical else "Inventory"
+    keys = ["snapshot_date", "case_name"] if historical else ["case_name"]
+    _require_columns(inventory, [*keys, "quantity"], label)
+    result = inventory.copy()
+    _validate_names(result, label)
+    result["quantity"] = _parse_numbers(result["quantity"], f"{label}.quantity", quantity=True)
+    if historical:
+        result["snapshot_date"] = _parse_dates(result["snapshot_date"], f"{label}.snapshot_date")
+    if result.duplicated(keys).any():
+        raise ValueError(f"{label}: duplicate holdings for {', '.join(keys)}")
+    return result
+
+
+def prepare_price_history(price_history: pd.DataFrame) -> pd.DataFrame:
+    """Validate prices, preserving missing observations and warning on conflicts.
+
+    Same-item, same-timestamp observations retain the last nonmissing price in
+    file order. No rounding, case folding, or identifier normalization is used.
+    """
+    _require_columns(price_history, ["case_name", "date", "unit_price"], "Price history")
+    prices = price_history.copy()
+    _validate_names(prices, "Price history")
+    prices["date"] = _parse_dates(prices["date"], "Price history.date")
+    prices["unit_price"] = _parse_numbers(prices["unit_price"], "Price history.unit_price")
+    valid = prices.dropna(subset=["unit_price"])
+    conflicts = valid.groupby(["case_name", "date"])["unit_price"].nunique()
+    if (conflicts > 1).any():
+        warnings.warn(
+            "Conflicting prices for the same case and timestamp; last nonmissing row wins.",
+            UserWarning, stacklevel=2,
+        )
+    return prices
+
+
 def calculate_inventory_value(
     inventory: pd.DataFrame, price_history: pd.DataFrame
 ) -> pd.DataFrame:
     """Join each case to its latest valid price and calculate its value."""
-    prices = price_history.copy()
-    prices["date"] = pd.to_datetime(prices["date"], errors="coerce")
-    prices["unit_price"] = pd.to_numeric(prices["unit_price"], errors="coerce")
-    prices = (
-        prices.dropna(subset=["date", "unit_price"])
-        .sort_values("date", kind="stable")
-        .drop_duplicates(["case_name", "date"], keep="last")
-    )
+    prices = prepare_price_history(price_history).dropna(subset=["unit_price"])
+    prices = prices.sort_values("date", kind="stable").drop_duplicates(["case_name", "date"], keep="last")
 
     latest_prices = (
         prices.sort_values("date", kind="stable")
@@ -30,8 +107,7 @@ def calculate_inventory_value(
         .rename(columns={"date": "price_date", "unit_price": "unit_price"})
     )
 
-    result = inventory.copy()
-    result["quantity"] = pd.to_numeric(result["quantity"], errors="raise")
+    result = prepare_inventory(inventory)
     result = result.merge(
         latest_prices[["case_name", "price_date", "unit_price"]],
         on="case_name",
@@ -85,13 +161,12 @@ def save_monthly_inventory_snapshot(
     history_path: Path = INVENTORY_HISTORY_PATH,
 ) -> pd.DataFrame:
     """Save one inventory snapshot per month, replacing that month's prior snapshot."""
-    snapshot_date = pd.Timestamp(snapshot_date).normalize()
-    snapshot = inventory[["case_name", "quantity"]].copy()
-    snapshot["quantity"] = pd.to_numeric(snapshot["quantity"], errors="raise")
+    snapshot_date = _parse_dates(pd.Series([snapshot_date]), "Snapshot date").iloc[0].normalize()
+    snapshot = prepare_inventory(inventory)[["case_name", "quantity"]]
     snapshot.insert(0, "snapshot_date", snapshot_date)
 
     if history_path.exists():
-        history = pd.read_csv(history_path, parse_dates=["snapshot_date"])
+        history = prepare_inventory(pd.read_csv(history_path), historical=True)
         same_month = (history["snapshot_date"].dt.year == snapshot_date.year) & (
             history["snapshot_date"].dt.month == snapshot_date.month
         )
@@ -109,18 +184,9 @@ def calculate_historical_portfolio_value(
     inventory_history: pd.DataFrame, price_history: pd.DataFrame
 ) -> pd.DataFrame:
     """Value each monthly inventory snapshot using the latest price on or before it."""
-    snapshots = inventory_history.copy()
-    snapshots["snapshot_date"] = pd.to_datetime(snapshots["snapshot_date"], errors="coerce")
-    snapshots["quantity"] = pd.to_numeric(snapshots["quantity"], errors="coerce")
-
-    prices = price_history.copy()
-    prices["date"] = pd.to_datetime(prices["date"], errors="coerce")
-    prices["unit_price"] = pd.to_numeric(prices["unit_price"], errors="coerce")
-    prices = (
-        prices.dropna(subset=["date", "unit_price"])
-        .sort_values("date", kind="stable")
-        .drop_duplicates(["case_name", "date"], keep="last")
-    )
+    snapshots = prepare_inventory(inventory_history, historical=True)
+    prices = prepare_price_history(price_history).dropna(subset=["unit_price"])
+    prices = prices.sort_values("date", kind="stable").drop_duplicates(["case_name", "date"], keep="last")
 
     valued_snapshots = []
     for case_name, case_snapshots in snapshots.groupby("case_name"):

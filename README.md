@@ -259,6 +259,22 @@ gaps. Notebook weights are percentages of known value, excluding unpriced
 holdings. Changes between snapshot totals also reflect quantity changes and
 must not be interpreted as investment returns.
 
+Input validation raises `ValueError` for missing required columns, blank or
+non-string item identifiers, identifiers with surrounding whitespace, invalid
+dates, and invalid numeric values. Quantities must be present, finite,
+nonnegative whole numbers. Prices must be finite and nonnegative when present;
+missing prices remain unavailable, while an observed zero price is retained.
+Boolean values are rejected as numbers. Numeric strings are accepted.
+
+Dates must be present and timezone-naive; timestamps retain their time of day
+for price matching. Item names are matched exactly, including case. Duplicate
+inventory holdings are rejected (per item for the current inventory, per item
+and snapshot timestamp for history). Repeated price observations retain the
+last nonmissing price in file order for each item and timestamp, with a warning
+if those prices conflict. Input DataFrames and source CSV files are not cleaned
+or rewritten by the calculation functions. Snapshot saving validates both the
+incoming inventory and existing history before writing.
+
 ### V3 — Visualization
 
 * [x] Portfolio value chart
