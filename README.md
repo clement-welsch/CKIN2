@@ -226,15 +226,73 @@ The project will progressively evolve into a complete skin portfolio tracking an
 
 ### V2 — Analysis
 
-* [ ] Calculate current inventory value
+* [x] Calculate current inventory value
 * [ ] Calculate profit / loss
-* [ ] Analyze portfolio performance
+* [x] Analyze portfolio performance
 * [ ] Analyze individual skins
+
+Run the portfolio report from the project root once a month, after updating
+`data/processed/drop_cases_inventory.csv` with current quantities. In `home`
+mode, it retrieves prices, calculates the current inventory value, and saves
+that month's inventory snapshot to
+`data/processed/drop_cases_inventory_history.csv`. Running it again in the same
+month replaces that month's snapshot. Historical values use the latest recorded
+price on or before each snapshot date. In `school` mode, it values the inventory
+with the latest saved prices. Since those prices were not freshly retrieved
+from Steam, school mode is fully read-only: it does not write price history or
+inventory snapshots.
+
+```powershell
+python src/portfolio_report.py home
+python src/portfolio_report.py school
+```
+
+Reports distinguish `known_value` (the subtotal of priced holdings) from
+`total_value` (available only when every held item has a price). Price coverage
+counts held item types, not units. Zero-quantity rows do not require a price;
+an empty inventory has a complete value of zero. When no held item can be
+priced, both values are unavailable rather than zero.
+
+The same rules apply to monthly snapshots. Historical totals remain unavailable
+on incomplete dates, and the notebook does not calculate changes across those
+gaps. Notebook weights are percentages of known value, excluding unpriced
+holdings. Changes between snapshot totals also reflect quantity changes and
+must not be interpreted as investment returns.
+
+Input validation raises `ValueError` for missing required columns, blank or
+non-string item identifiers, identifiers with surrounding whitespace, invalid
+dates, and invalid numeric values. Quantities must be present, finite,
+nonnegative whole numbers. Prices must be finite and nonnegative when present;
+missing prices remain unavailable, while an observed zero price is retained.
+Boolean values are rejected as numbers. Numeric strings are accepted.
+
+Dates must be present and timezone-naive; timestamps retain their time of day
+for price matching. Item names are matched exactly, including case. Duplicate
+inventory holdings are rejected (per item for the current inventory, per item
+and snapshot timestamp for history). Repeated price observations retain the
+last nonmissing price in file order for each item and timestamp, with a warning
+if those prices conflict. Input DataFrames and source CSV files are not cleaned
+or rewritten by the calculation functions. Snapshot saving validates both the
+incoming inventory and existing history before writing.
+
+Run the automated tests from the project root with Python 3.10 or later and
+Pandas/NumPy available:
+
+```powershell
+python -B -m unittest discover -s test -v
+```
+
+Tests use synthetic inputs and temporary files under `test/`; they do not
+contact Steam or write to `data/`. Coverage includes partial valuations, invalid
+inputs, school-mode read-only behavior, monthly snapshot replacement, retention
+of other months and years, repeat-run idempotence, and valuation using each
+snapshot's own holdings. Selected notebook calculation cells are checked with
+synthetic data; this does not replace a full notebook run with local CSV files.
 
 ### V3 — Visualization
 
-* [ ] Portfolio value chart
-* [ ] Price evolution charts
+* [x] Portfolio value chart
+* [x] Price evolution charts
 * [ ] Skin comparison charts
 * [ ] Dashboard
 
@@ -250,6 +308,7 @@ The project will progressively evolve into a complete skin portfolio tracking an
 * [ ] Trend indicators
 * [ ] Volatility / risk analysis
 * [ ] Buy / sell / hold decision-support tools
+* [ ] Use scikit-learn to forecast price or portfolio-value changes between monthly CKIN2 updates once enough history has been collected
 
 ---
 
