@@ -4,12 +4,17 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import json
+from contextlib import redirect_stdout
+from io import StringIO
+from unittest.mock import Mock
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from analyze_drop_cases import (
     calculate_historical_portfolio_value,
+    prepare_inventory,
     save_monthly_inventory_snapshot,
 )
 
@@ -91,6 +96,62 @@ class MonthlySnapshotTests(unittest.TestCase):
 
         self.assertEqual(history.total_value.tolist(), [14.0, 40.0])
         self.assertEqual(history.cases_without_price.tolist(), [0, 0])
+
+    def test_empty_snapshot_roundtrip_and_monthly_replacement(self):
+        holdings = pd.DataFrame({"case_name": ["Alpha"], "quantity": [2]})
+        empty = pd.DataFrame(columns=["case_name", "quantity"])
+        save_monthly_inventory_snapshot(holdings, "2026-09-01", self.path)
+        save_monthly_inventory_snapshot(holdings, "2026-10-01", self.path)
+        save_monthly_inventory_snapshot(empty, "2026-10-27", self.path)
+        original = self.path.read_bytes()
+        save_monthly_inventory_snapshot(empty, "2026-10-27", self.path)
+        self.assertEqual(self.path.read_bytes(), original)
+        snapshots = prepare_inventory(self.read_history(), historical=True)
+        self.assertEqual(snapshots.snapshot_date.dt.month.tolist(), [9, 10])
+        self.assertEqual(snapshots.snapshot_empty.tolist(), [False, True])
+        self.assertTrue(pd.isna(snapshots.iloc[-1].case_name))
+        prices = pd.DataFrame({"date": ["2026-09-01"], "case_name": ["Alpha"], "unit_price": [4.0]})
+        valued = calculate_historical_portfolio_value(snapshots, prices)
+        self.assertEqual(valued.total_value.tolist(), [8.0, 0.0])
+        self.assertEqual(valued.total_cases.tolist(), [1, 0])
+        self.assertEqual(valued.cases_without_price.tolist(), [0, 0])
+
+        # The notebook must retain the empty month as a complete zero valuation.
+        notebook = json.loads((Path(__file__).resolve().parents[1] / "notebook/analysis.ipynb").read_text(encoding="utf-8"))
+        import numpy as np
+        from analyze_drop_cases import summarize_inventory_value
+        scope = {"pd": pd, "np": np, "snapshots": snapshots, "prices": prices.assign(date=pd.to_datetime(prices.date)),
+                 "summarize_inventory_value": summarize_inventory_value, "display": Mock(), "px": Mock()}
+        with redirect_stdout(StringIO()):
+            exec("".join(notebook["cells"][18]["source"]), scope)
+        self.assertEqual(scope["portfolio_history"].total_value.tolist(), [8.0, 0.0])
+        self.assertEqual(scope["portfolio_history"].quantity_coverage_pct.tolist(), [100.0, 100.0])
+        self.assertEqual(scope["portfolio_history"].change_pct.iloc[-1], -100.0)
+        with redirect_stdout(StringIO()):
+            exec("".join(notebook["cells"][20]["source"]), scope)
+        self.assertEqual(scope["decomposition"].case_name.tolist(), ["Alpha"])
+
+        save_monthly_inventory_snapshot(holdings, "2026-10-28", self.path)
+        restored = prepare_inventory(self.read_history(), historical=True)
+        self.assertFalse(restored.snapshot_empty.any())
+        self.assertEqual(restored.quantity.tolist(), [2, 2])
+
+    def test_first_empty_snapshot_has_zero_value_without_prices(self):
+        save_monthly_inventory_snapshot(pd.DataFrame(columns=["case_name", "quantity"]), "2026-10-27", self.path)
+        prices = pd.DataFrame(columns=["date", "case_name", "unit_price"])
+        result = calculate_historical_portfolio_value(self.read_history(), prices)
+        self.assertEqual(result.total_value.tolist(), [0.0])
+        self.assertEqual(result.known_value.tolist(), [0.0])
+        self.assertEqual(result.total_cases.tolist(), [0])
+
+    def test_malformed_empty_markers_are_rejected(self):
+        marker = pd.DataFrame({"snapshot_date": ["2026-10-27"], "case_name": [None], "quantity": [0], "snapshot_empty": [True]})
+        for frame in (marker.assign(quantity=1), marker.assign(case_name="Alpha"),
+                      marker.assign(snapshot_empty="True"), marker.assign(snapshot_empty=None),
+                      pd.concat([marker, marker.assign(case_name="Alpha", snapshot_empty=False)]),
+                      pd.concat([marker, marker])):
+            with self.subTest(frame=frame), self.assertRaises(ValueError):
+                prepare_inventory(frame, historical=True)
 
 
 if __name__ == "__main__":

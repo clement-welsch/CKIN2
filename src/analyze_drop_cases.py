@@ -59,15 +59,30 @@ def _parse_numbers(values: pd.Series, label: str, *, quantity: bool = False) -> 
 
 
 def prepare_inventory(inventory: pd.DataFrame, *, historical: bool = False) -> pd.DataFrame:
-    """Validate holdings without normalizing or merging distinct identifiers."""
+    """Validate holdings and explicit empty-snapshot markers.
+
+    Legacy histories need no migration. An empty snapshot is one row with
+    snapshot_empty=True, a missing case_name and quantity=0. It cannot coexist
+    with holdings at the same date.
+    """
     label = "Inventory history" if historical else "Inventory"
     keys = ["snapshot_date", "case_name"] if historical else ["case_name"]
     _require_columns(inventory, [*keys, "quantity"], label)
     result = inventory.copy()
-    _validate_names(result, label)
+    empty = pd.Series(False, index=result.index)
+    if historical and "snapshot_empty" in result:
+        markers = result["snapshot_empty"]
+        if not markers.map(lambda value: isinstance(value, bool)).all():
+            raise ValueError(f"{label}: snapshot_empty must contain boolean values")
+        empty = markers
+    _validate_names(result.loc[~empty], label)
     result["quantity"] = _parse_numbers(result["quantity"], f"{label}.quantity", quantity=True)
     if historical:
         result["snapshot_date"] = _parse_dates(result["snapshot_date"], f"{label}.snapshot_date")
+        if (empty & (result["case_name"].notna() | result["quantity"].ne(0))).any():
+            raise ValueError(f"{label}: empty snapshots require missing case_name and quantity=0")
+        if result.loc[empty, "snapshot_date"].isin(result.loc[~empty, "snapshot_date"]).any():
+            raise ValueError(f"{label}: empty snapshots cannot contain holdings")
     if result.duplicated(keys).any():
         raise ValueError(f"{label}: duplicate holdings for {', '.join(keys)}")
     return result
@@ -164,9 +179,18 @@ def save_monthly_inventory_snapshot(
     snapshot_date = _parse_dates(pd.Series([snapshot_date]), "Snapshot date").iloc[0].normalize()
     snapshot = prepare_inventory(inventory)[["case_name", "quantity"]]
     snapshot.insert(0, "snapshot_date", snapshot_date)
+    if snapshot.empty:
+        snapshot = pd.DataFrame({
+            "snapshot_date": [snapshot_date], "case_name": [None],
+            "quantity": [0], "snapshot_empty": [True],
+        })
 
     if history_path.exists():
         history = prepare_inventory(pd.read_csv(history_path), historical=True)
+        if "snapshot_empty" in history or "snapshot_empty" in snapshot:
+            for frame in (history, snapshot):
+                if "snapshot_empty" not in frame:
+                    frame["snapshot_empty"] = False
         same_month = (history["snapshot_date"].dt.year == snapshot_date.year) & (
             history["snapshot_date"].dt.month == snapshot_date.month
         )
@@ -189,7 +213,7 @@ def calculate_historical_portfolio_value(
     prices = prices.sort_values("date", kind="stable").drop_duplicates(["case_name", "date"], keep="last")
 
     valued_snapshots = []
-    for case_name, case_snapshots in snapshots.groupby("case_name"):
+    for case_name, case_snapshots in snapshots.groupby("case_name", dropna=False):
         case_prices = prices.loc[prices["case_name"] == case_name, ["date", "unit_price"]]
         case_snapshots = case_snapshots.sort_values("snapshot_date")
         if case_prices.empty:
