@@ -99,11 +99,11 @@ CKIN2/
 │   └── processed/
 │       └── Cleaned and prepared datasets
 │
-├── notebooks/
-│   ├── 01_import_data.ipynb
-│   ├── 02_data_cleaning.ipynb
-│   ├── 03_price_analysis.ipynb
-│   └── 04_visualization.ipynb
+├── notebook/
+│   ├── cases_book.ipynb
+│   ├── skins_book.ipynb
+│   ├── souvenirs_book.ipynb
+│   └── others_book.ipynb
 │
 ├── src/
 │   ├── data/
@@ -350,3 +350,52 @@ CKIN2 is primarily a personal learning and experimentation project focused on:
 * and, eventually, the application of data science and machine learning techniques to a real-world market.
 
 The project follows a **progressive, data-driven approach**, starting by making the historical data reliable and structured before introducing more advanced analytical or predictive methods.
+
+
+## Category notebooks and local CSV conversion
+
+Run `python src/process_categories.py` from the project root to normalize the
+four exports in `data/raw/`. This regenerates `skins_inventory.csv`,
+`skins_prices.csv`, `souvenirs_inventory.csv`, `souvenirs_prices.csv`,
+`others_inventory.csv`, `others_prices.csv`, and `category_import_issues.csv`
+in the ignored `data/processed/` directory. Existing drop-case inventory and
+price files are preserved; they are imported from raw only when absent.
+Re-running the converter regenerates ordinary market observations from raw.
+Manual acquisition references marked `source_column=0` in the three category
+price CSVs are preserved, including items no longer present in raw and references
+sharing a date with a market observation. Repeated runs do not multiply these
+references. Other manual edits to generated rows are replaced; edit raw instead.
+Acquisition references represent acquisition dates and reference values, not
+confirmed purchase costs. They never populate `purchase_unit_price` or
+`purchase_date`. Existing price schemas are checked before any exports are written. The converter never contacts Steam.
+
+Open `notebook/cases_book.ipynb`, `notebook/skins_book.ipynb`,
+`notebook/souvenirs_book.ipynb`, or `notebook/others_book.ipynb` using the project
+Python environment with pandas, NumPy, Plotly, and IPython installed. These
+notebooks only read CSVs. Agents and charms in the skins source are grouped with
+stickers in the others category. Souvenir identifiers include tournament and map.
+
+Category inventory columns are `item_name`, `item_type`, `quantity`,
+`purchase_unit_price`, and `purchase_date`. Market history uses `date`,
+`item_name`, `unit_price`, `date_estimated`, `source_file`, and `source_column`
+(one-based column numbers). Source totals and tournament headings are excluded;
+decimal commas are converted and missing values stay missing.
+
+The first numerical skins column after quantity is the unit purchase price,
+with unknown purchase date. Undated market columns bounded by dated columns
+are interpolated between those dates and marked `date_estimated=True`; fractional
+days are truncated to the calendar day. No purchase date is inferred from market
+prices. Missing quantities are reported and excluded from the known subtotal;
+the complete portfolio total remains unavailable. New categories do not invent
+historical inventory snapshots or apply current quantities to historical prices.
+
+Category notebooks exclude source_column=0 acquisition references from market
+indices, price coverage, and valuation. Reference values appear as separate
+crosses on the price chart; acquisition dates also have their own timeline.
+Estimated market dates are identified in hover details. An acquisition-only item
+has no market valuation until a market observation is available.
+
+See [the category workflow](docs/category-notebooks.md) for setup, data contracts
+and notebook privacy checks, and [the development journal](docs/journal.md) for
+this branch. Install the validated dependencies with
+`python -m pip install -r requirements.txt` (validated Python: 3.14.6).
