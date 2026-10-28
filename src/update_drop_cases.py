@@ -133,7 +133,8 @@ def main(environment):
     if new_rows:
         new_prices = pd.DataFrame(new_rows)
         price_history_path = PRICE_HISTORY_PATH
-        if price_history_path.exists() and price_history_path.stat().st_size:
+        has_history = price_history_path.exists() and price_history_path.stat().st_size > 0
+        if has_history:
             with price_history_path.open("rb+") as price_file:
                 price_file.seek(-1, 2)
                 if price_file.read(1) not in (b"\n", b"\r"):
@@ -141,7 +142,7 @@ def main(environment):
         new_prices.to_csv(
             price_history_path,
             mode="a",
-            header=False,
+            header=not has_history,
             index=False
         )
 
