@@ -124,7 +124,7 @@ class ValuationCoverageTests(unittest.TestCase):
         ])
 
     def test_notebook_weights_and_changes_respect_incomplete_coverage(self):
-        notebook = json.loads((PROJECT_ROOT / "notebook/analysis.ipynb").read_text(encoding="utf-8"))
+        notebook = json.loads((PROJECT_ROOT / "notebook/cases_book.ipynb").read_text(encoding="utf-8"))
         snapshots = pd.DataFrame({
             "snapshot_date": pd.to_datetime(["2026-01-01", "2026-02-01", "2026-02-01", "2026-03-01", "2026-04-01"]),
             "case_name": ["Alpha", "Alpha", "Beta", "Alpha", "Alpha"],

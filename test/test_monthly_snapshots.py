@@ -117,7 +117,7 @@ class MonthlySnapshotTests(unittest.TestCase):
         self.assertEqual(valued.cases_without_price.tolist(), [0, 0])
 
         # The notebook must retain the empty month as a complete zero valuation.
-        notebook = json.loads((Path(__file__).resolve().parents[1] / "notebook/analysis.ipynb").read_text(encoding="utf-8"))
+        notebook = json.loads((Path(__file__).resolve().parents[1] / "notebook/cases_book.ipynb").read_text(encoding="utf-8"))
         import numpy as np
         from analyze_drop_cases import summarize_inventory_value
         scope = {"pd": pd, "np": np, "snapshots": snapshots, "prices": prices.assign(date=pd.to_datetime(prices.date)),

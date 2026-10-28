@@ -32,7 +32,7 @@ class NotebookHistoryTests(unittest.TestCase):
             }), historical=True),
             "display": Mock(), "px": Mock(), "go": Mock(),
         }
-        notebook = json.loads((PROJECT_ROOT / "notebook/analysis.ipynb").read_text(encoding="utf-8"))
+        notebook = json.loads((PROJECT_ROOT / "notebook/cases_book.ipynb").read_text(encoding="utf-8"))
         with redirect_stdout(StringIO()) as output:
             for index, cell in enumerate(notebook["cells"]):
                 if cell["cell_type"] == "code" and index > 2:
