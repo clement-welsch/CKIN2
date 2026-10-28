@@ -1,5 +1,25 @@
 # Development journal
 
+## 2026-10-28 - Python environment and CI
+
+Branch: `codex/reproducible-python-ci` (based on the category-notebooks commit).
+Tracking: #11.
+
+- Recorded CPython 3.14.6 in `.python-version` and clarified the scope of the
+  direct dependency pins; transitive dependencies are not fully locked.
+- Added GitHub Actions jobs for Windows and Linux on pushes, pull requests and
+  manual dispatch. Jobs install dependencies, check compatibility and notebook
+  imports, then run the synthetic unittest suite without personal CSVs or Steam.
+- Documented setup and fresh-install verification in an ignored `.venv-ci`
+  without replacing the working project environment.
+
+Validation: the existing environment passed 36 tests. A fresh Windows CPython
+3.14.6 environment installed all requirements, passed `pip check` and notebook
+dependency imports, and passed the same 36 tests. `git diff --check` passed.
+Remote Actions execution, including Linux installation, remains unverified
+until publication and the first successful workflow run. No private data was
+used or modified by this work.
+
 ## 2026-10-28 - Category notebooks
 
 Branch: `Klement/feat/category-notebooks`.

@@ -275,11 +275,14 @@ if those prices conflict. Input DataFrames and source CSV files are not cleaned
 or rewritten by the calculation functions. Snapshot saving validates both the
 incoming inventory and existing history before writing.
 
-Run the automated tests from the project root with Python 3.10 or later and
-Pandas/NumPy available:
+Use CPython 3.14.6, recorded in `.python-version`, and install the pinned direct
+dependencies before running the automated tests from the project root:
 
 ```powershell
-python -B -m unittest discover -s test -v
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -B -m unittest discover -s test -v
 ```
 
 Tests use synthetic inputs and temporary files under `test/`; they do not
@@ -288,6 +291,11 @@ inputs, school-mode read-only behavior, monthly snapshot replacement, retention
 of other months and years, repeat-run idempotence, and valuation using each
 snapshot's own holdings. Selected notebook calculation cells are checked with
 synthetic data; this does not replace a full notebook run with local CSV files.
+
+GitHub Actions runs this suite on clean Windows and Linux runners for pushes
+and pull requests. See [setup and CI details](docs/category-notebooks.md).
+Direct dependency versions are pinned; transitive dependencies are resolved
+by pip rather than fully locked.
 
 ### V3 — Visualization
 
