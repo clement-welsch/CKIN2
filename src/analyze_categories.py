@@ -44,6 +44,9 @@ def analyze_category(inventory, prices):
     prices, _ = split_price_records(prices)
     prices = prices.rename(columns={"item_name": "case_name"})
     prices = prepare_price_history(prices).dropna(subset=["unit_price"])
+    # Match valuation's last-nonmissing observation rule before building charts
+    # or counting coverage; retain metadata from the selected market record.
+    prices = prices.drop_duplicates(["case_name", "date"], keep="last")
     inventory = inventory.copy()
     inventory["quantity"] = pd.to_numeric(inventory["quantity"], errors="raise")
     unknown = inventory.loc[inventory.quantity.isna()].copy()

@@ -67,6 +67,10 @@ remain distinct from market reference values.
 
 ## Before committing
 
+Repeated market observations for the same item and timestamp use the last
+nonmissing price in file order, retaining its metadata. This selection is shared
+by category charts, base-100 indices, observation counts and valuation.
+
 Clear all notebook outputs and execution counters using the editor, then save.
 Saved tables and Plotly figures can reveal private holdings even while CSVs are
 ignored. Inspect the staged diff, including notebook metadata. Do not add data
