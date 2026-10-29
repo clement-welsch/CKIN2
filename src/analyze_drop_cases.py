@@ -204,10 +204,14 @@ def save_monthly_inventory_snapshot(
     return history
 
 
-def calculate_historical_portfolio_value(
+def calculate_historical_valuation(
     inventory_history: pd.DataFrame, price_history: pd.DataFrame
-) -> pd.DataFrame:
-    """Value each monthly inventory snapshot using the latest price on or before it."""
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return valued holdings and coverage aggregates for each snapshot.
+
+    Prices are matched backward in time using each snapshot's own quantities.
+    Empty-snapshot markers are retained. Inputs are validated and never mutated.
+    """
     snapshots = prepare_inventory(inventory_history, historical=True)
     prices = prepare_price_history(price_history).dropna(subset=["unit_price"])
     prices = prices.sort_values("date", kind="stable").drop_duplicates(["case_name", "date"], keep="last")
@@ -218,6 +222,7 @@ def calculate_historical_portfolio_value(
         case_snapshots = case_snapshots.sort_values("snapshot_date")
         if case_prices.empty:
             case_snapshots = case_snapshots.copy()
+            case_snapshots["date"] = pd.NaT
             case_snapshots["unit_price"] = float("nan")
         else:
             case_snapshots = pd.merge_asof(
@@ -230,17 +235,33 @@ def calculate_historical_portfolio_value(
         case_snapshots["market_value"] = case_snapshots["quantity"] * case_snapshots["unit_price"]
         valued_snapshots.append(case_snapshots)
 
-    if not valued_snapshots:
-        return pd.DataFrame(columns=[
-            "snapshot_date", "known_value", "total_value", "priced_cases",
-            "total_cases", "cases_without_price",
-        ])
-
-    details = pd.concat(valued_snapshots, ignore_index=True)
-    return pd.DataFrame([
-        {"snapshot_date": snapshot_date, **summarize_inventory_value(group)}
+    details = (
+        pd.concat(valued_snapshots, ignore_index=True)
+        if valued_snapshots else snapshots.assign(date=pd.NaT, unit_price=float("nan"), market_value=float("nan"))
+    )
+    details = details.sort_values(["snapshot_date", "case_name"], kind="stable").reset_index(drop=True)
+    details["priced_quantity"] = details["quantity"].where(details["unit_price"].notna(), 0)
+    summary = pd.DataFrame([
+        {"snapshot_date": snapshot_date, **summarize_inventory_value(group),
+         "total_quantity": group["quantity"].sum(),
+         "priced_quantity": group["priced_quantity"].sum()}
         for snapshot_date, group in details.groupby("snapshot_date", sort=True)
+    ], columns=[
+        "snapshot_date", "known_value", "total_value", "priced_cases",
+        "total_cases", "cases_without_price", "total_quantity", "priced_quantity",
     ])
+    return details, summary
+
+
+def calculate_historical_portfolio_value(
+    inventory_history: pd.DataFrame, price_history: pd.DataFrame
+) -> pd.DataFrame:
+    """Return historical totals with the existing report column contract."""
+    _, summary = calculate_historical_valuation(inventory_history, price_history)
+    return summary[[
+        "snapshot_date", "known_value", "total_value", "priced_cases",
+        "total_cases", "cases_without_price",
+    ]]
 
 
 def main() -> None:
