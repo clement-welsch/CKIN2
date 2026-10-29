@@ -46,7 +46,10 @@ and prices are written to `data/processed/`, excluded from Git.
 
 Existing drop-case files are preserved. Category inventory files and ordinary
 market rows are regenerated; edit raw exports for persistent corrections.
-Manual price rows marked `source_column=0` survive regeneration. They identify
+Manual price rows marked `source_column=0` survive regeneration, including numeric
+zero representations such as `0.0` and `0.00`. Their original fields are retained;
+invalid, missing or fractional source-column markers stop conversion before any
+exports are rewritten. They identify
 acquisition dates and reference values, never confirmed purchase costs.
 Market rows sharing their date are retained separately.
 

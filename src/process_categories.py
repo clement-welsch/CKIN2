@@ -115,6 +115,14 @@ def write_csv(path, columns, rows):
         writer.writerows(rows)
 
 
+def source_column_number(value):
+    """Accept integer-valued decimal CSV representations such as 0.0."""
+    parsed = number(str(value))
+    if not parsed or Decimal(parsed) % 1:
+        raise ValueError("source_column must contain nonnegative whole numbers")
+    return int(Decimal(parsed))
+
+
 def preserve_acquisitions(path, generated):
     """Retain manual acquisition references without treating them as purchases."""
     acquisitions = []
@@ -124,10 +132,10 @@ def preserve_acquisitions(path, generated):
             if reader.fieldnames != PRICE_COLUMNS:
                 raise ValueError(f"{path}: unexpected price CSV columns; file preserved")
             for row in reader:
-                if row.get("source_column") != "0":
-                    continue
                 if None in row or any(value is None for value in row.values()):
                     raise ValueError(f"{path}: malformed acquisition row; file preserved")
+                if source_column_number(row["source_column"]) != 0:
+                    continue
                 datetime.strptime(row["date"], "%Y-%m-%d")
                 if not row["item_name"].strip():
                     raise ValueError(f"{path}: acquisition item name is missing")
@@ -138,7 +146,7 @@ def preserve_acquisitions(path, generated):
     # Keep both records on matching dates; the market observation follows the
     # acquisition reference so existing last-observation rules remain useful.
     return sorted([*acquisitions, *generated], key=lambda row: (
-        row["item_name"], row["date"], int(row["source_column"])
+        row["item_name"], row["date"], source_column_number(row["source_column"])
     ))
 
 
