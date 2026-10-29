@@ -66,6 +66,32 @@ class SteamCollectionTests(unittest.TestCase):
             with self.subTest(error=error), patch.object(collector.subprocess, "run", side_effect=error), redirect_stdout(StringIO()):
                 self.assertIsNone(collector.connect_to_steam("Alpha"))
 
+    def test_malformed_payloads_cannot_become_false_observations(self):
+        payloads = [None, [], 42, "text", {"success": False, "lowest_price": "1,25€"}]
+        payloads += [{"success": True, "lowest_price": price} for price in (
+            False, 3.5, {}, [], "-1,25€", "1,2,34€", "1.2€", "NaN", "inf", "9e9", "1,234,56€", "9" * 400,
+        )]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                self.assertIsNone(self.collect(response(json.dumps(payload)))[0])
+
+    def test_transport_failures_leave_existing_history_byte_identical(self):
+        for result in (response("{}", "429"), response("bad JSON"), price_response("-1,25€")):
+            with self.subTest(result=result), tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+                root = Path(directory)
+                inventory, history = root / "inventory.csv", root / "prices.csv"
+                inventory.write_text("case_name,quantity\nAlpha,2\n", encoding="utf-8")
+                original = b"date,case_name,unit_price\n2026-01-01,Alpha,1.25"
+                history.write_bytes(original)
+                with (
+                    patch.object(collector, "INVENTORY_PATH", inventory),
+                    patch.object(collector, "PRICE_HISTORY_PATH", history),
+                    patch.object(collector.subprocess, "run", return_value=result),
+                    redirect_stdout(StringIO()),
+                ):
+                    collector.main(collector.Environment.HOME)
+                self.assertEqual(history.read_bytes(), original)
+
     def test_mixed_collection_preserves_old_prices_and_appends_only_successes(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
             root = Path(directory)
