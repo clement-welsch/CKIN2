@@ -2,6 +2,7 @@ import argparse
 from datetime import date
 from enum import Enum
 import json
+from math import isfinite
 from pathlib import Path
 import re
 import subprocess
@@ -73,14 +74,24 @@ def connect_to_steam(name_case):
         print(f"Réponse JSON invalide de Steam pour {name_case}.")
         return None
 
+    if not isinstance(data, dict) or data.get("success", True) is not True:
+        print(f"Réponse Steam sans succès pour {name_case}.")
+        return None
     lowest_price = data.get("lowest_price")
-    if lowest_price is None:
+    if not isinstance(lowest_price, str):
         print(f"Aucun prix Steam disponible pour {name_case}.")
         return None
 
     # Steam may format prices with either decimal or thousands separators.
-    price_text = "".join(char for char in lowest_price if char.isdigit() or char in ".,")
-    if not re.search(r"\d", price_text):
+    price_text = re.sub(r"[\s€]", "", lowest_price)
+    # Reject signs, malformed grouping and unexpected payloads rather than
+    # stripping them into a plausible but incorrect positive observation.
+    valid_formats = (
+        r"[0-9]+(?:[.,][0-9]{2})?",
+        r"[0-9]{1,3}(?:\.[0-9]{3})+(?:,[0-9]{2})?",
+        r"[0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]{2})?",
+    )
+    if not any(re.fullmatch(pattern, price_text) for pattern in valid_formats):
         return None
     if "." in price_text and "," in price_text:
         decimal_separator = "." if price_text.rfind(".") > price_text.rfind(",") else ","
@@ -90,7 +101,8 @@ def connect_to_steam(name_case):
         price_text = price_text.replace(",", ".") if len(price_text.rsplit(",", 1)[1]) == 2 else price_text.replace(",", "")
     elif "." in price_text and len(price_text.rsplit(".", 1)[1]) != 2:
         price_text = price_text.replace(".", "")
-    return float(price_text)
+    price = float(price_text)
+    return price if isfinite(price) else None
 
 
 def parse_args():
