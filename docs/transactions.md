@@ -44,4 +44,7 @@ unknown opening quantities and unknown observed quantities produce explicit
 unavailable results. Use an observation timestamp matching the actual inventory;
 this command does not reconstruct an arbitrary historical inventory. An item
 absent from an observed imported category is interpreted as zero. Imported
-category completeness is required when interpreting the result.
+category completeness is required when interpreting the result. The CLI passes
+the imported-category set explicitly; missing observed categories stay unknown.
+Library callers can pass observed_imported; an omitted set declares all six
+categories complete.

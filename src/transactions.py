@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from global_snapshots import build_snapshot, validate_snapshots
-from portfolio_data import HOLDINGS, ROOT, _parse_dates, _parse_numbers, atomic_csv, identity, load_holdings, validate_holdings
+from portfolio_data import CATEGORIES, HOLDINGS, ROOT, _parse_dates, _parse_numbers, atomic_csv, identity, load_holdings, validate_holdings
 
 COLUMNS = ["transaction_id", "date", "item_id", "category", "item_name", "type", "quantity",
            "currency", "unit_price", "gross_amount", "fees", "net_amount"]
@@ -46,6 +46,8 @@ def validate_transactions(frame):
             raise ValueError("Unit and gross prices disagree")
         if row.type == "drop" and any(pd.notna(v) and v != 0 for v in (row.unit_price, row.gross_amount, row.fees, row.net_amount)):
             raise ValueError("A free drop cannot have a paid acquisition cost")
+        if row.type == "sale" and pd.notna(row.gross_amount) and pd.notna(row.fees) and row.fees > row.gross_amount:
+            raise ValueError("Sale fees cannot exceed gross proceeds")
         if row.type in ("purchase", "sale") and pd.notna(row.gross_amount) and pd.notna(row.fees) and pd.notna(row.net_amount):
             expected = row.gross_amount + row.fees if row.type == "purchase" else row.gross_amount - row.fees
             if expected < 0 or not np.isclose(expected, row.net_amount, rtol=0, atol=.005):
@@ -63,9 +65,12 @@ def opening_holdings(opening):
     return holdings, stamp, unavailable
 
 
-def reconcile(opening, journal, observed, when):
+def reconcile(opening, journal, observed, when, *, observed_imported=None):
     baseline, start, unavailable = opening_holdings(opening)
     journal, observed = validate_transactions(journal), validate_holdings(observed)
+    observed_imported = set(observed_imported) if observed_imported is not None else set(CATEGORIES)
+    if not observed_imported.issubset(CATEGORIES) or not set(observed.category).issubset(observed_imported):
+        raise ValueError("Observed holdings must belong to imported categories")
     end = _parse_dates(pd.Series([when]), "reconciliation date").iloc[0]
     if end < start:
         raise ValueError("Reconciliation precedes opening inventory")
@@ -92,7 +97,7 @@ def reconcile(opening, journal, observed, when):
                 raise ValueError(f"Negative inventory after transactions for {item.item_name}")
             value += movements.delta.sum()
         expected = float("nan") if reason else value
-        current = actual.get(item.item_id, 0.0)
+        current = actual.get(item.item_id, 0.0) if item.category in observed_imported else float("nan")
         difference = current - expected
         status = reason or ("unknown_observed_quantity" if pd.isna(current) else "match" if difference == 0 else "mismatch")
         rows.append(dict(item_id=item.item_id, category=item.category, item_name=item.item_name,
@@ -144,7 +149,8 @@ def main():
             import_transactions(pd.read_csv(args.csv), journal_path, opening)
         else:
             journal = pd.read_csv(journal_path) if journal_path.exists() else pd.DataFrame(columns=COLUMNS)
-            print(reconcile(opening, journal, load_holdings()[0], args.date).to_string(index=False, na_rep="N/A"))
+            holdings, imported = load_holdings()
+            print(reconcile(opening, journal, holdings, args.date, observed_imported=imported).to_string(index=False, na_rep="N/A"))
 
 
 if __name__ == "__main__":

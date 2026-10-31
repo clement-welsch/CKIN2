@@ -48,7 +48,8 @@ class TransactionTests(unittest.TestCase):
             before = path.read_bytes()
             for candidate in [row("a", "purchase", 2), row("b", "sale", 20),
                               row("c", "purchase", 1, unit_price=2, gross_amount=10),
-                              row("d", "drop", 1, gross_amount=5), row("e", "sale", 1, date="2025-12-01")]:
+                              row("d", "drop", 1, gross_amount=5), row("e", "sale", 1, date="2025-12-01"),
+                              row("f", "sale", 1, gross_amount=1, fees=2)]:
                 with self.subTest(candidate=candidate), self.assertRaises(ValueError):
                     import_transactions(pd.DataFrame([candidate]), path, opening)
                 self.assertEqual(before, path.read_bytes())
@@ -71,6 +72,17 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(result.iloc[0].difference, -2)
             self.assertEqual(result.iloc[0].status, "mismatch")
             pd.testing.assert_frame_equal(before, holdings)
+
+    def test_missing_observed_category_is_unknown_not_zero(self):
+        with tempfile.TemporaryDirectory() as directory:
+            holdings, opening, row = self.setup_data(Path(directory))
+            journal = pd.DataFrame(columns=COLUMNS)
+            observed = holdings.loc[holdings.category.ne("case")]
+            result = reconcile(opening, journal, observed, "2026-02-01",
+                               observed_imported=set(observed.category))
+            case = result.loc[result.category.eq("case")].iloc[0]
+            self.assertEqual(case.status, "unknown_observed_quantity")
+            self.assertTrue(pd.isna(case.observed_quantity))
 
 
 if __name__ == "__main__":
