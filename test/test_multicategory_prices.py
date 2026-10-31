@@ -88,6 +88,21 @@ class MarketTests(unittest.TestCase):
             self.assertEqual(prices.unit_price.tolist(), [9])
             self.assertEqual(before, path.read_bytes())
 
+    def test_catalog_preserves_historical_other_item_classification(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            holdings, _ = fixture(root)
+            target = root / "data/processed"
+            agent = holdings.loc[holdings.category.eq("agent")].iloc[0]
+            pd.DataFrame({"date": ["2026-01-01"], "item_name": [agent.item_name], "unit_price": [5],
+                          "source_column": [2], "date_estimated": [False]}).to_csv(target / "others_prices.csv", index=False)
+            current = pd.read_csv(target / "others_inventory.csv")
+            current.loc[current.item_type.ne("agent")].to_csv(target / "others_inventory.csv", index=False)
+            remaining, _ = load_holdings(root)
+            catalog = validate_catalog(pd.read_csv(target / "market_catalog.csv"), remaining)
+            self.assertEqual(len(catalog), 5)
+            self.assertEqual(load_prices(root).category.tolist(), ["agent"])
+
 
 if __name__ == "__main__":
     unittest.main()
