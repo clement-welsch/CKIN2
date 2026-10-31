@@ -106,6 +106,8 @@ def analyze(root=ROOT, now=None, max_age_days=45):
                   .drop_duplicates(["item_id", "date"], keep="last")
                   [["item_id", "date", "date_estimated", "source"]]
                   .rename(columns={"date": "price_date", "date_estimated": "price_date_estimated", "source": "price_source"}))
+    current_detail["price_date"] = pd.to_datetime(current_detail.price_date)
+    history_detail["price_date"] = pd.to_datetime(history_detail.price_date)
     current_detail = current_detail.merge(provenance, on=["item_id", "price_date"], how="left", validate="many_to_one")
     history_detail = history_detail.merge(provenance, on=["item_id", "price_date"], how="left", validate="many_to_one")
     indices, diagnostic = market_indices(holdings, prices, max_age_days)
