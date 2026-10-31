@@ -46,7 +46,10 @@ and prices are written to `data/processed/`, excluded from Git.
 
 Existing drop-case files are preserved. Category inventory files and ordinary
 market rows are regenerated; edit raw exports for persistent corrections.
-Manual price rows marked `source_column=0` survive regeneration. They identify
+Manual price rows marked `source_column=0` survive regeneration, including numeric
+zero representations such as `0.0` and `0.00`. Their original fields are retained;
+invalid, missing or fractional source-column markers stop conversion before any
+exports are rewritten. They identify
 acquisition dates and reference values, never confirmed purchase costs.
 Market rows sharing their date are retained separately.
 
@@ -66,6 +69,10 @@ categories have no reconstructed historical quantity snapshots. Purchase costs
 remain distinct from market reference values.
 
 ## Before committing
+
+Repeated market observations for the same item and timestamp use the last
+nonmissing price in file order, retaining its metadata. This selection is shared
+by category charts, base-100 indices, observation counts and valuation.
 
 Clear all notebook outputs and execution counters using the editor, then save.
 Saved tables and Plotly figures can reveal private holdings even while CSVs are
