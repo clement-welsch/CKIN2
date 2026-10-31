@@ -37,8 +37,9 @@ not merged when this entry was written.
   in [the workflow guide](one-command-update.md), linked from the README.
 
 Environment verification used the recreated project `.venv`: CPython 3.14.6
-matches `.python-version`, and `pip check` passed. Seven targeted workflow tests
-passed. Full-suite/import verification is tracked in the PR validation results.
+matches `.python-version`, and `pip check` passed. All declared project imports
+loaded successfully. Seven targeted workflow tests and the full suite of **83
+tests** passed; `git diff --check` passed. Remote CI status is available in the PR.
 No private CSVs were modified and no live Steam request was made during testing.
 Scheduling, notifications, concurrency and request-batch resumption remain outside
 this issue.
