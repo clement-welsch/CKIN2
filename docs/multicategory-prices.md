@@ -14,7 +14,9 @@ blank in a new template: enter each exact Steam market_hash_name including wear,
 StatTrak/Souvenir and other listing variants. Case names preserve the existing
 Case/Terminal convention. The collector rejects blank, stale, duplicate or
 ambiguous mappings before contacting Steam. When the inventory changes, edit
-the catalog to match its current identities; initialization never overwrites it.
+the catalog to cover its current identities; initialization never overwrites it.
+Keep mappings for previously owned items: they classify historical others prices
+after an item leaves the current inventory. Only current items are collected.
 
 Identity is UUID5 of the exact category and item name. Renaming an object changes
 its identity; there is no fuzzy matching. The new file market_observations.csv
