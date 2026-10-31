@@ -110,6 +110,43 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(prices.date.nunique(), 6)
             self.assertTrue(pd.to_datetime(prices.date).le(stamp).all())
 
+    def test_malformed_inventory_schema_fails_before_network_or_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            (root / "data/processed/drop_cases_inventory.csv").write_text("invalid\nrow\n")
+            before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+            with patch("update_market_prices.fetch_market_price", side_effect=AssertionError("Network reached")):
+                result = self.execute(root)
+            self.assertEqual(result["code"], FAILURE)
+            self.assertEqual(result["stages"][-1]["stage"], "validation")
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
+
+    def test_report_failure_preserves_prices_and_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            with patch("update_portfolio.value_snapshots", side_effect=ValueError("Report unavailable")):
+                result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], FAILURE)
+            self.assertEqual(result["stages"][-1]["stage"], "report")
+            self.assertTrue((root / "data/processed/market_observations.csv").exists())
+            self.assertTrue((root / "data/processed/global_inventory_history.csv").exists())
+            before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+            result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
+
+    def test_current_report_prints_price_dates_and_age(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()) as output:
+            root = Path(directory)
+            fixture(root)
+            result = run(root, "home", clock=lambda: pd.Timestamp("2026-10-31T12:00:00"),
+                         fetch=lambda _: 5, pause=lambda _: None)
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertIn("price_date", output.getvalue())
+            self.assertIn("price_age_days", output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

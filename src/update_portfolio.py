@@ -69,9 +69,12 @@ def run(root=ROOT, environment="school", *, date=None, snapshot_path=None,
         stages.append(dict(stage=stage, status="partial" if status == PARTIAL else "ok", timestamp=observed_at))
         print("\nCurrent portfolio (gross EUR; N/A means incomplete)")
         print(current.to_string(index=False, na_rep="N/A"))
+        print("\nPrice dates and age in days")
+        print(detail[["category", "item_name", "price_date", "price_age_days"]]
+              .to_string(index=False, na_rep="N/A"))
         print("\nHistorical snapshots")
         print(historical.to_string(index=False, na_rep="N/A"))
-    except (ValueError, OSError, KeyError, TypeError) as error:
+    except (ValueError, OSError, KeyError, TypeError, AttributeError) as error:
         status = FAILURE
         stages.append(dict(stage=stage, status="failed", error=str(error)))
     print("\nExecution summary")

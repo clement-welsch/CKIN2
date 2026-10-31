@@ -10,6 +10,23 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-01 - Reconcile portfolio update PR #43 with develop
+
+Branch: `codex/portfolio-update-command`.
+Review: [PR #43](https://github.com/clement-welsch/CKIN2/pull/43).
+
+- Integrated the implementation already merged in PR #42, retaining its
+  structured result, `--date` / `--snapshot-path` options, stale-price status,
+  live per-item timestamps and rejection of backdated home collection.
+- Retained the snapshot explanation as a focused guide linked from the main
+  workflow documentation, removing incompatible `--at` examples.
+- Added individual price dates/ages to the report, graceful failure for malformed
+  inventory schemas and regressions for reporting failures after successful writes.
+
+Validation: all 86 tests passed, CLI help and `git diff --check` passed.
+No live Steam collection or private
+CSV changes are required. The PR remains open for review.
+
 ## 2026-10-31 - One-command portfolio update
 
 Branch: `codex/one-command-update`, based on the current `develop` branch.

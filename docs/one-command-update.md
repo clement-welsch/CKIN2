@@ -1,5 +1,8 @@
 # One-command portfolio update (#33)
 
+For a quantity-based example and the distinction between empty and unimported
+categories, see [Understanding portfolio snapshots](portfolio-update.md).
+
 From the repository root, using the project virtual environment:
 
 ```powershell
