@@ -10,6 +10,24 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-10-31 - Complete portfolio update command (in review)
+
+Branch: `codex/portfolio-update-command`. Tracking: [#33](https://github.com/clement-welsch/CKIN2/issues/33).
+Review: [PR #43](https://github.com/clement-welsch/CKIN2/pull/43), targeting `develop`; not merged.
+
+- Added a single home/school command for input validation, market collection,
+  monthly global snapshot persistence and current/historical reports.
+- Added explicit success/partial/failure exit codes, price ages and stage errors.
+- Preserved completed writes after later stage failures and deterministic retries.
+- Documented snapshot quantities, monthly replacement, empty versus unimported
+  categories and backward-only valuation in `docs/portfolio-update.md`.
+
+Validation: 81 tests passed in the full suite; three subsequently added workflow
+tests also passed (eight workflow tests total). Workflow tests use synthetic CSVs and simulated Steam, including
+partial collection, invalid inputs, school immutability and persistence failures.
+CLI help and `git diff --check` also passed.
+Limitations: file-level atomicity only; no scheduler or notification enabled.
+
 ## 2026-10-31 - Global portfolio tracking and experimental forecasting
 
 The following pull requests were reviewed and merged into `develop` on
