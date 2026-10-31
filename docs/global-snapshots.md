@@ -27,10 +27,8 @@ references are excluded. Historic changes include changes in quantities.
 Existing case snapshots and all category exports remain untouched. Global history
 begins when this command is first run; earlier global holdings are not invented.
 Legacy market observations without a time of day are interpreted at midnight on
-their recorded date. New snapshots are dated at midnight, so prices collected
-later the same day are intentionally unavailable to that midnight snapshot.
-Run a snapshot on the following day to include those observations. This preserves
-the strict no-future-price rule.
+their recorded date. New snapshots retain their actual local time of day, so a
+price collected earlier the same day can be used without admitting future prices.
 
 Tests verify complete-category reconciliation, unknown/empty/absent states,
 future-price exclusion, empty transitions, year/month retention, repeat-run

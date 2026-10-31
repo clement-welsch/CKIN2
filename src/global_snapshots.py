@@ -39,7 +39,7 @@ def build_snapshot(holdings, imported, when):
     holdings = validate_holdings(holdings)
     if not set(imported).issubset(CATEGORIES) or not set(holdings.category).issubset(imported):
         raise ValueError("Holdings must belong to imported categories")
-    stamp = _parse_dates(pd.Series([when]), "snapshot_date").iloc[0].normalize()
+    stamp = _parse_dates(pd.Series([when]), "snapshot_date").iloc[0]
     rows = []
     for category in CATEGORIES:
         group = holdings.loc[holdings.category.eq(category)]
