@@ -86,7 +86,16 @@ def load_prices(root=ROOT, holdings=None):
     if holdings is None:
         holdings, _ = load_holdings(root)
     frames = []
-    names = holdings.set_index("item_name").category.to_dict()
+    registry = holdings[["item_id", "category", "item_name"]].copy()
+    catalog_path = Path(root) / "data/processed/market_catalog.csv"
+    if catalog_path.exists():
+        catalog = pd.read_csv(catalog_path)
+        validate_holdings(catalog.assign(quantity=0)[HOLDINGS])
+        registry = pd.concat([catalog[["item_id", "category", "item_name"]], registry], ignore_index=True)
+    registry = registry.loc[registry.category.isin(["sticker", "charm", "agent"])]
+    if registry.groupby("item_name").category.nunique().gt(1).any():
+        raise ValueError("Ambiguous historical category for an others item")
+    names = registry.drop_duplicates("item_name").set_index("item_name").category.to_dict()
     for prefix, category in FILES.items():
         path = Path(root) / "data/processed" / f"{prefix}_prices.csv"
         if not path.exists():
