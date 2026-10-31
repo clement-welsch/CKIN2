@@ -10,23 +10,56 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
-## 2026-10-31 - Complete portfolio update command (in review)
+## 2026-11-01 - Reconcile portfolio update PR #43 with develop
 
-Branch: `codex/portfolio-update-command`. Tracking: [#33](https://github.com/clement-welsch/CKIN2/issues/33).
-Review: [PR #43](https://github.com/clement-welsch/CKIN2/pull/43), targeting `develop`; not merged.
+Branch: `codex/portfolio-update-command`.
+Review: [PR #43](https://github.com/clement-welsch/CKIN2/pull/43).
 
-- Added a single home/school command for input validation, market collection,
-  monthly global snapshot persistence and current/historical reports.
-- Added explicit success/partial/failure exit codes, price ages and stage errors.
-- Preserved completed writes after later stage failures and deterministic retries.
-- Documented snapshot quantities, monthly replacement, empty versus unimported
-  categories and backward-only valuation in `docs/portfolio-update.md`.
+- Integrated the implementation already merged in PR #42, retaining its
+  structured result, `--date` / `--snapshot-path` options, stale-price status,
+  live per-item timestamps and rejection of backdated home collection.
+- Retained the snapshot explanation as a focused guide linked from the main
+  workflow documentation, removing incompatible `--at` examples.
+- Added individual price dates/ages to the report, graceful failure for malformed
+  inventory schemas and regressions for reporting failures after successful writes.
 
-Validation: 81 tests passed in the full suite; three subsequently added workflow
-tests also passed (eight workflow tests total). Workflow tests use synthetic CSVs and simulated Steam, including
-partial collection, invalid inputs, school immutability and persistence failures.
-CLI help and `git diff --check` also passed.
-Limitations: file-level atomicity only; no scheduler or notification enabled.
+Validation: all 86 tests passed, CLI help and `git diff --check` passed.
+No live Steam collection or private
+CSV changes are required. The PR remains open for review.
+
+## 2026-10-31 - One-command portfolio update
+
+Branch: `codex/one-command-update`, based on the current `develop` branch.
+Tracking: [issue #33](https://github.com/clement-welsch/CKIN2/issues/33),
+[PR #42](https://github.com/clement-welsch/CKIN2/pull/42). Status: in review;
+not merged when this entry was written.
+
+- Added `update_portfolio.py` to validate processed inputs, collect prices,
+  save a global monthly snapshot and print current/historical reports.
+- Reused the existing collection, snapshot and valuation functions, adding
+  explicit home/school modes, configurable data/history paths and an exact
+  school-mode valuation cutoff. Home rejects backdated live-price execution.
+- Added a collection clock so the unified home command timestamps individual
+  observations when retrieved and takes its snapshot after collection.
+- Distinguished exit statuses 0 (complete success), 1 (partial result, including
+  stale/missing data or failed prices) and 2 (validation/processing failure).
+  Stage summaries identify completed steps and the failing step.
+- Preserved collected prices when snapshot writing fails; each CSV replacement
+  remains atomic independently. Repeat runs do not corrupt history or duplicate
+  identical item/source/timestamp observations. School never writes data or
+  contacts Steam.
+- Added synthetic regressions for full/partial collection, preflight failures,
+  snapshot failure and retry, real timestamps and read-only CLI operation.
+- Documented the command, date semantics, exit statuses and partial-write scope
+  in [the workflow guide](one-command-update.md), linked from the README.
+
+Environment verification used the recreated project `.venv`: CPython 3.14.6
+matches `.python-version`, and `pip check` passed. All declared project imports
+loaded successfully. Seven targeted workflow tests and the full suite of **83
+tests** passed; `git diff --check` passed. Remote CI status is available in the PR.
+No private CSVs were modified and no live Steam request was made during testing.
+Scheduling, notifications, concurrency and request-batch resumption remain outside
+this issue.
 
 ## 2026-10-31 - Global portfolio tracking and experimental forecasting
 

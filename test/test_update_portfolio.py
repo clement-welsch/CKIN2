@@ -1,105 +1,151 @@
-"""End-to-end update workflow using temporary CSVs and simulated Steam."""
-
-from contextlib import redirect_stdout
-from io import StringIO
+import contextlib
+import io
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pandas as pd
 
 from test_multicategory_prices import fixture
-from update_portfolio import run, SUCCESS, PARTIAL, FAILURE
+from update_portfolio import FAILURE, PARTIAL, SUCCESS, main, run
 
 
-class UpdatePortfolioTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
-        self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
-        fixture(self.root)
-        self.output = StringIO()
+class WorkflowTests(unittest.TestCase):
+    def execute(self, root, mode="home", **kwargs):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return run(root, mode, clock=lambda: pd.Timestamp("2026-10-31T12:00:00"),
+                       pause=lambda _: None, **kwargs)
 
-    def update(self, **kwargs):
-        with redirect_stdout(self.output):
-            return run(self.root, pause=lambda _: None, **kwargs)
+    def test_complete_workflow_timestamps_and_repeat_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertEqual([s["stage"] for s in result["stages"]], ["validation", "collection", "snapshot", "report"])
+            self.assertEqual(result["current"].loc[lambda f: f.category.eq("global"), "total_value"].iloc[0], 35)
+            before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+            self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
 
-    def contents(self):
-        return {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*.csv")}
+    def test_partial_collection_retains_previous_prices_and_marks_status(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            self.execute(root, fetch=lambda _: 4)
+            result = self.execute(root, fetch=lambda n: None if n == "Recoil Case" else 5)
+            self.assertEqual(result["code"], PARTIAL)
+            self.assertEqual(result["collection"].outcome.eq("failed").sum(), 1)
+            case = result["collection"].loc[lambda f: f.category.eq("case")].iloc[0]
+            self.assertEqual(case.unit_price, 4)
+            self.assertEqual(result["current"].loc[lambda f: f.category.eq("global"), "total_value"].iloc[0], 33)
 
-    def test_complete_workflow_and_retry_do_not_duplicate_rows(self):
-        self.assertEqual(self.update(environment="home", when="2026-10-31 12:00", fetch=lambda _: 2), SUCCESS)
-        before = self.contents()
-        self.assertEqual(self.update(environment="home", when="2026-10-31 12:00", fetch=lambda _: 2), SUCCESS)
-        self.assertEqual(before, self.contents())
-        self.assertIn("snapshot: saved", self.output.getvalue())
-        self.assertIn("Monthly snapshot history", self.output.getvalue())
+    def test_missing_price_leaves_total_unavailable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            result = self.execute(root, fetch=lambda n: None if n == "Recoil Case" else 5)
+            self.assertEqual(result["code"], PARTIAL)
+            self.assertTrue(pd.isna(result["current"].loc[lambda f: f.category.eq("global"), "total_value"].iloc[0]))
 
-    def test_partial_collection_preserves_old_prices_and_reports_failure(self):
-        self.update(environment="home", when="2026-10-01", fetch=lambda _: 2)
-        fetch = Mock(side_effect=[3, None, None, None, None, None])
-        self.assertEqual(self.update(environment="home", when="2026-10-31", fetch=fetch), PARTIAL)
-        prices = pd.read_csv(self.root / "data/processed/market_observations.csv")
-        self.assertEqual(len(prices), 7)
-        self.assertIn("5 failed", self.output.getvalue())
-        self.assertIn("price_age_days", self.output.getvalue())
+    def test_preflight_failures_do_not_call_network_or_write(self):
+        for kind in ["catalog", "history", "inventory", "date", "target"]:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                fixture(root)
+                target = root / "data/processed"
+                if kind == "catalog":
+                    (target / "market_catalog.csv").write_text("broken\n1\n")
+                elif kind == "history":
+                    (target / "global_inventory_history.csv").write_text("broken\n1\n")
+                elif kind == "inventory":
+                    pd.DataFrame({"case_name": ["Recoil"], "quantity": [-1]}).to_csv(target / "drop_cases_inventory.csv", index=False)
+                before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+                options = {"date": "2020-01-01"} if kind == "date" else {"snapshot_path": target / "market_catalog.csv"} if kind == "target" else {}
+                with patch("update_market_prices.fetch_market_price", side_effect=AssertionError("Network reached")):
+                    result = self.execute(root, **options)
+                self.assertEqual(result["code"], FAILURE)
+                self.assertEqual(result["stages"][-1]["stage"], "validation")
+                self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
 
-    def test_school_never_contacts_steam_or_writes_data(self):
-        before = self.contents()
-        fetch = Mock(side_effect=AssertionError("network"))
-        self.assertEqual(self.update(environment="school", when="2026-10-31", fetch=fetch), PARTIAL)
-        fetch.assert_not_called()
-        self.assertEqual(before, self.contents())
-        self.assertFalse((self.root / "data/processed/global_inventory_history.csv").exists())
+    def test_snapshot_failure_preserves_prices_and_retry_finishes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            with patch("update_portfolio.save_snapshot", side_effect=OSError("Disk unavailable")):
+                result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], FAILURE)
+            self.assertEqual(result["stages"][-1]["stage"], "snapshot")
+            prices = root / "data/processed/market_observations.csv"
+            before = prices.read_bytes()
+            result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertEqual(prices.read_bytes(), before)
 
-    def test_invalid_inputs_fail_before_network_or_writes(self):
-        for target in ("market_catalog.csv", "drop_cases_inventory.csv", "global_inventory_history.csv"):
-            with self.subTest(target=target):
-                path = self.root / "data/processed" / target
-                original = path.read_bytes() if path.exists() else None
-                path.write_text("invalid\nrow\n", encoding="utf-8")
-                before = self.contents()
-                fetch = Mock(side_effect=AssertionError("network"))
-                self.assertEqual(self.update(environment="home", when="2026-10-31", fetch=fetch), FAILURE)
-                fetch.assert_not_called()
-                self.assertEqual(before, self.contents())
-                if original is None:
-                    path.unlink()
-                else:
-                    path.write_bytes(original)
+    def test_school_and_cli_paths_are_read_only_and_respect_cutoff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            self.execute(root, fetch=lambda _: 5)
+            before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+            with patch("update_market_prices.fetch_market_price", side_effect=AssertionError("Network")), patch("update_portfolio.save_snapshot", side_effect=AssertionError("Write")):
+                result = self.execute(root, "school", date="2026-01-01")
+                self.assertEqual(result["code"], PARTIAL)
+                self.assertTrue(result["historical"].empty)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(main(["school", "--root", str(root), "--date", "2026-01-01",
+                                           "--snapshot-path", str(root / "custom-history.csv")]), PARTIAL)
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
 
-    def test_snapshot_failure_preserves_collection_and_retry_recovers(self):
-        with patch("global_snapshots.atomic_csv", side_effect=OSError("disk full")):
-            self.assertEqual(self.update(environment="home", when="2026-10-31", fetch=lambda _: 2), FAILURE)
-        self.assertIn("snapshot: FAILED", self.output.getvalue())
-        prices = self.root / "data/processed/market_observations.csv"
-        before = prices.read_bytes()
-        self.assertEqual(self.update(environment="home", when="2026-10-31", fetch=lambda _: 2), SUCCESS)
-        self.assertEqual(before, prices.read_bytes())
+    def test_real_observation_times_precede_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            root = Path(directory)
+            fixture(root)
+            moments = iter(pd.date_range("2026-10-31T12:00:00", periods=9, freq="s"))
+            result = run(root, "home", clock=lambda: next(moments), fetch=lambda _: 5, pause=lambda _: None)
+            prices = pd.read_csv(root / "data/processed/market_observations.csv")
+            stamp = result["stages"][2]["timestamp"]
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertEqual(prices.date.nunique(), 6)
+            self.assertTrue(pd.to_datetime(prices.date).le(stamp).all())
 
-    def test_school_reuses_existing_snapshot_without_modification(self):
-        self.update(environment="home", when="2026-10-01", fetch=lambda _: 2)
-        before = self.contents()
-        fetch = Mock(side_effect=AssertionError("network"))
-        self.assertEqual(self.update(environment="school", when="2026-10-31", fetch=fetch), SUCCESS)
-        self.assertEqual(before, self.contents())
-        fetch.assert_not_called()
+    def test_malformed_inventory_schema_fails_before_network_or_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            (root / "data/processed/drop_cases_inventory.csv").write_text("invalid\nrow\n")
+            before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+            with patch("update_market_prices.fetch_market_price", side_effect=AssertionError("Network reached")):
+                result = self.execute(root)
+            self.assertEqual(result["code"], FAILURE)
+            self.assertEqual(result["stages"][-1]["stage"], "validation")
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
 
-    def test_report_failure_keeps_both_successful_writes(self):
-        with patch("update_portfolio.analyze", side_effect=ValueError("report unavailable")):
-            self.assertEqual(self.update(environment="home", when="2026-10-31", fetch=lambda _: 2), FAILURE)
-        self.assertIn("report: FAILED", self.output.getvalue())
-        self.assertTrue((self.root / "data/processed/market_observations.csv").exists())
-        self.assertTrue((self.root / "data/processed/global_inventory_history.csv").exists())
+    def test_report_failure_preserves_prices_and_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture(root)
+            with patch("update_portfolio.value_snapshots", side_effect=ValueError("Report unavailable")):
+                result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], FAILURE)
+            self.assertEqual(result["stages"][-1]["stage"], "report")
+            self.assertTrue((root / "data/processed/market_observations.csv").exists())
+            self.assertTrue((root / "data/processed/global_inventory_history.csv").exists())
+            before = {p: p.read_bytes() for p in root.rglob("*.csv")}
+            result = self.execute(root, fetch=lambda _: 5)
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*.csv")})
 
-    def test_invalid_timestamp_fails_before_collection(self):
-        before = self.contents()
-        fetch = Mock(side_effect=AssertionError("network"))
-        for when in ("invalid", "2026-10-31T12:00:00Z"):
-            self.assertEqual(self.update(environment="home", when=when, fetch=fetch), FAILURE)
-        fetch.assert_not_called()
-        self.assertEqual(before, self.contents())
+    def test_current_report_prints_price_dates_and_age(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()) as output:
+            root = Path(directory)
+            fixture(root)
+            result = run(root, "home", clock=lambda: pd.Timestamp("2026-10-31T12:00:00"),
+                         fetch=lambda _: 5, pause=lambda _: None)
+            self.assertEqual(result["code"], SUCCESS)
+            self.assertIn("price_date", output.getvalue())
+            self.assertIn("price_age_days", output.getvalue())
 
 
 if __name__ == "__main__":
