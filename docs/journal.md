@@ -4,6 +4,12 @@ Entries record development and integration milestones in reverse chronological
 order. Dates use Europe/Paris. Status statements describe the time of writing;
 linked issues and pull requests remain the source for their current status.
 
+For future feature work, add an English entry in the same PR with the development
+date, feature summary, branch, tracking issue/PR, validation performed and material
+limitations. Clearly distinguish planned work, work in review and merged changes.
+Keep personal inventory data, credentials and private notebook outputs out of
+the journal.
+
 ## 2026-10-31 - Global portfolio tracking and experimental forecasting
 
 The following pull requests were reviewed and merged into `develop` on
