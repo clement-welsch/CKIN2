@@ -10,9 +10,10 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
-## 2026-10-31 - Complete portfolio update command (in development)
+## 2026-10-31 - Complete portfolio update command (in review)
 
 Branch: `codex/portfolio-update-command`. Tracking: [#33](https://github.com/clement-welsch/CKIN2/issues/33).
+Review: [PR #43](https://github.com/clement-welsch/CKIN2/pull/43), targeting `develop`; not merged.
 
 - Added a single home/school command for input validation, market collection,
   monthly global snapshot persistence and current/historical reports.
