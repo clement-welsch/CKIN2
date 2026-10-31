@@ -37,7 +37,7 @@ def validate_catalog(catalog, holdings):
     return merged
 
 
-def collect(root=ROOT, environment="school", *, now=None, fetch=None, pause=time.sleep):
+def collect(root=ROOT, environment="school", *, now=None, fetch=None, pause=time.sleep, clock=None):
     if environment not in ("school", "home"):
         raise ValueError("Unknown environment")
     now = pd.Timestamp(now if now is not None else datetime.now()).floor("s")
@@ -53,7 +53,10 @@ def collect(root=ROOT, environment="school", *, now=None, fetch=None, pause=time
         for index, row in enumerate(catalog.itertuples(index=False)):
             price = fetch(row.market_hash_name)
             if price is not None and not isinstance(price, bool) and isfinite(price) and price >= 0:
-                rows.append(dict(date=now, item_id=row.item_id, category=row.category, item_name=row.item_name,
+                observed_at = pd.Timestamp(clock()).floor("s") if clock is not None else now
+                if pd.isna(observed_at) or observed_at.tzinfo is not None or observed_at < now:
+                    raise ValueError("Collection clock must be local, valid and monotonic from run start")
+                rows.append(dict(date=observed_at, item_id=row.item_id, category=row.category, item_name=row.item_name,
                                  unit_price=price, source="steam", currency="EUR", date_estimated=False))
                 outcomes[row.item_id] = "updated"
             else:
@@ -65,12 +68,13 @@ def collect(root=ROOT, environment="school", *, now=None, fetch=None, pause=time
             # One observation per item/source/timestamp; same timestamp retries replace it.
             combined = validate_prices(combined).drop_duplicates(["date", "item_id", "source"], keep="last")
             atomic_csv(combined, target)
+    report_at = pd.Timestamp(clock()).floor("s") if clock is not None else now
     prices = load_prices(root, holdings)
-    prices = prices.loc[prices.date.le(now) & prices.unit_price.notna()]
+    prices = prices.loc[prices.date.le(report_at) & prices.unit_price.notna()]
     latest = prices.sort_values("date", kind="stable").drop_duplicates("item_id", keep="last")
     report = holdings.merge(latest[["item_id", "date", "unit_price"]], on="item_id", how="left")
     report["outcome"] = report.item_id.map(outcomes).astype("string").fillna("saved_price_only")
-    report["age_days"] = (now - report.date).dt.total_seconds() / 86400
+    report["age_days"] = (report_at - report.date).dt.total_seconds() / 86400
     print(report.to_string(index=False, na_rep="N/A"))
     for category, group in report.groupby("category"):
         print(f"{category}: {group.unit_price.notna().sum()}/{len(group)} priced; "
