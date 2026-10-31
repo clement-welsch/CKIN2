@@ -102,6 +102,12 @@ def analyze(root=ROOT, now=None, max_age_days=45):
     history = validate_snapshots(pd.read_csv(path)) if path.exists() else pd.DataFrame(columns=COLUMNS)
     history = history.loc[history.snapshot_date.le(now)]
     history_detail, historical = value_snapshots(history, prices)
+    provenance = (prices.dropna(subset=["unit_price"]).sort_values("date", kind="stable")
+                  .drop_duplicates(["item_id", "date"], keep="last")
+                  [["item_id", "date", "date_estimated", "source"]]
+                  .rename(columns={"date": "price_date", "date_estimated": "price_date_estimated", "source": "price_source"}))
+    current_detail = current_detail.merge(provenance, on=["item_id", "price_date"], how="left", validate="many_to_one")
+    history_detail = history_detail.merge(provenance, on=["item_id", "price_date"], how="left", validate="many_to_one")
     indices, diagnostic = market_indices(holdings, prices, max_age_days)
     return dict(holdings=holdings, prices=prices, current_detail=current_detail, current=current,
                 history=history, history_detail=history_detail, historical=historical,
