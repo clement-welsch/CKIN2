@@ -10,6 +10,39 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-10-31 - One-command portfolio update
+
+Branch: `codex/one-command-update`, based on the current `develop` branch.
+Tracking: [issue #33](https://github.com/clement-welsch/CKIN2/issues/33),
+[PR #42](https://github.com/clement-welsch/CKIN2/pull/42). Status: in review;
+not merged when this entry was written.
+
+- Added `update_portfolio.py` to validate processed inputs, collect prices,
+  save a global monthly snapshot and print current/historical reports.
+- Reused the existing collection, snapshot and valuation functions, adding
+  explicit home/school modes, configurable data/history paths and an exact
+  school-mode valuation cutoff. Home rejects backdated live-price execution.
+- Added a collection clock so the unified home command timestamps individual
+  observations when retrieved and takes its snapshot after collection.
+- Distinguished exit statuses 0 (complete success), 1 (partial result, including
+  stale/missing data or failed prices) and 2 (validation/processing failure).
+  Stage summaries identify completed steps and the failing step.
+- Preserved collected prices when snapshot writing fails; each CSV replacement
+  remains atomic independently. Repeat runs do not corrupt history or duplicate
+  identical item/source/timestamp observations. School never writes data or
+  contacts Steam.
+- Added synthetic regressions for full/partial collection, preflight failures,
+  snapshot failure and retry, real timestamps and read-only CLI operation.
+- Documented the command, date semantics, exit statuses and partial-write scope
+  in [the workflow guide](one-command-update.md), linked from the README.
+
+Environment verification used the recreated project `.venv`: CPython 3.14.6
+matches `.python-version`, and `pip check` passed. Seven targeted workflow tests
+passed. Full-suite/import verification is tracked in the PR validation results.
+No private CSVs were modified and no live Steam request was made during testing.
+Scheduling, notifications, concurrency and request-batch resumption remain outside
+this issue.
+
 ## 2026-10-31 - Global portfolio tracking and experimental forecasting
 
 The following pull requests were reviewed and merged into `develop` on
