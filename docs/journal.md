@@ -1,5 +1,116 @@
 # Development journal
 
+Entries record development and integration milestones in reverse chronological
+order. Dates use Europe/Paris. Status statements describe the time of writing;
+linked issues and pull requests remain the source for their current status.
+
+For future feature work, add an English entry in the same PR with the development
+date, feature summary, branch, tracking issue/PR, validation performed and material
+limitations. Clearly distinguish planned work, work in review and merged changes.
+Keep personal inventory data, credentials and private notebook outputs out of
+the journal.
+
+## 2026-10-31 - Global portfolio tracking and experimental forecasting
+
+The following pull requests were reviewed and merged into `develop` on
+2026-10-31. Implementation, tests and documentation were split into multiple
+commits per feature.
+
+| Feature | Issue | Pull request | Development branch |
+| --- | --- | --- | --- |
+| Multi-category market price collection | [#23](https://github.com/clement-welsch/CKIN2/issues/23) | [#28](https://github.com/clement-welsch/CKIN2/pull/28) | `codex/multicategory-prices` |
+| Global monthly inventory snapshots | [#24](https://github.com/clement-welsch/CKIN2/issues/24) | [#29](https://github.com/clement-welsch/CKIN2/pull/29) | `codex/global-snapshots` |
+| Transaction journal and reconciliation | [#25](https://github.com/clement-welsch/CKIN2/issues/25) | [#30](https://github.com/clement-welsch/CKIN2/pull/30) | `codex/transaction-journal` |
+| Global portfolio analysis notebook | [#26](https://github.com/clement-welsch/CKIN2/issues/26) | [#31](https://github.com/clement-welsch/CKIN2/pull/31) | `codex/global-analysis` |
+| Experimental prediction notebook | [#27](https://github.com/clement-welsch/CKIN2/issues/27) | [#32](https://github.com/clement-welsch/CKIN2/pull/32) | `codex/experimental-prediction` |
+
+### Market data and inventory history
+
+- Added shared, stable category/item identities and a private catalog containing
+  exact Steam listing names for cases, skins, souvenirs, stickers, charms and
+  agents. Historical identities remain available after an item leaves holdings.
+- Added `update_market_prices.py`, preserving legacy exports and recording fresh
+  timestamped EUR observations separately. Failed collections retain previous
+  observations; reports show coverage and freshness. School mode stays read-only.
+- Added `global_snapshots.py` with atomic monthly replacement, actual snapshot
+  timestamps, explicit empty/unimported category states and unknown quantities.
+  Valuation uses each snapshot's holdings and only prices known at that instant.
+
+### Transactions and global analysis
+
+- Added `transactions.py` for purchases, sales, drops, transfers and adjustments,
+  an explicit opening inventory, idempotent batch imports and reconciliation.
+  Unknown dates and costs remain unknown; mismatches never rewrite holdings.
+- Added `global_book.ipynb` for global/category values, distribution, fixed-cohort
+  price comparisons and covered price/quantity contributions. Stickers, charms
+  and agents are displayed separately. Price provenance and missing data remain
+  visible, and unavailable comparisons are not filled with invented values.
+
+### Prediction experiment
+
+- Added `prediction_book.ipynb` with monthly data audits, persistence and trend
+  baselines, and a first Ridge model with past-only preprocessing/training.
+- Compared methods on common chronological evaluation windows using MAE/RMSE.
+  Excluded the current month, acquisition references and estimated observation
+  dates. Missing or stale monthly data remains unavailable.
+- Started model fitting at 12 usable past training pairs, explicitly treating
+  this as a technical threshold rather than proof of forecasting quality.
+
+Validation: combined local integration passed **76 synthetic tests** on CPython
+3.12.14 with the declared direct dependency versions. `pip check`, notebook
+format validation and `git diff --check` passed. All authored code cells in both
+new notebooks executed on complete/long, partial/short and empty fixtures; seven
+Plotly figures were serialized across their complete fixtures. CSV bytes stayed
+unchanged and committed notebooks contain no saved outputs. Future-target
+perturbation tests verified that earlier predictions do not change.
+
+Limits: these checks do not verify live Steam availability, manually supplied
+listing mappings, browser pixel rendering or forecasting accuracy on private
+data. No personal CSVs were committed. See the linked PR checks for remote CI
+results on the repository's supported Python version.
+
+Related integration: [PR #22](https://github.com/clement-welsch/CKIN2/pull/22),
+also merged on 2026-10-31, corrected duplicate market observations in category
+analysis and preserved decimal-zero acquisition markers during conversion.
+
+Implementation notes: [collection](multicategory-prices.md),
+[snapshots](global-snapshots.md), [transactions](transactions.md),
+[global analysis](global-analysis.md), [prediction](prediction.md).
+
+### Next backlog - planned, not implemented
+
+The next selection is tracked separately from delivered features:
+
+- P1: [one-command portfolio update (#33)](https://github.com/clement-welsch/CKIN2/issues/33),
+  [scheduled collection and failure tracking (#34)](https://github.com/clement-welsch/CKIN2/issues/34),
+  and [gains/losses after fees (#35)](https://github.com/clement-welsch/CKIN2/issues/35).
+- P2: [forecast archiving and real-world evaluation (#36)](https://github.com/clement-welsch/CKIN2/issues/36),
+  [interactive dashboard (#37)](https://github.com/clement-welsch/CKIN2/issues/37),
+  and [assisted Steam inventory import (#38)](https://github.com/clement-welsch/CKIN2/issues/38).
+- P2 research: [market-wide catalog and price series (#39)](https://github.com/clement-welsch/CKIN2/issues/39)
+  and [community video trend signals (#40)](https://github.com/clement-welsch/CKIN2/issues/40).
+  The initial creator selection is MasterShiny CS2, rubyjetski, IAMJERM - CS2,
+  TDM_Heyzeus and LeChineur. Exact channel identities and transcript acquisition
+  methods still need validation; no video collection has been implemented.
+
+## 2026-10-29 - Historical valuation and market-data reliability
+
+- [PR #19](https://github.com/clement-welsch/CKIN2/pull/19), tracking
+  [#9](https://github.com/clement-welsch/CKIN2/issues/9), made zero-base notebook
+  indices and performance indicators unavailable with explanations, while
+  retaining valid zero prices for valuation.
+- [PR #20](https://github.com/clement-welsch/CKIN2/pull/20), tracking
+  [#10](https://github.com/clement-welsch/CKIN2/issues/10), added simulated Steam
+  response/persistence coverage and rejected malformed prices without inventing
+  observations or losing existing history.
+- [PR #21](https://github.com/clement-welsch/CKIN2/pull/21), tracking
+  [#12](https://github.com/clement-welsch/CKIN2/issues/12), shared detailed
+  historical valuation and coverage between reports and the cases notebook,
+  preserving per-snapshot quantities and backward-only price matching.
+
+These three PRs were merged on 2026-10-29. Their original validation details and
+scope limitations are recorded in the linked PRs and their dedicated documents.
+
 ## 2026-10-28 - Python environment and CI
 
 Branch: `codex/reproducible-python-ci` (based on the category-notebooks commit).
