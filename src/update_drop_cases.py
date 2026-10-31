@@ -24,6 +24,12 @@ class Environment(Enum):
 def connect_to_steam(name_case):
     # Terminals are listed without the "Case" suffix on Steam Market.
     market_hash_name = name_case if name_case.endswith(" Terminal") else f"{name_case} Case"
+    return fetch_market_price(market_hash_name)
+
+
+def fetch_market_price(market_hash_name):
+    """Request an exact listing; the legacy case wrapper keeps its old contract."""
+    name_case = market_hash_name
     params = urlencode({
         "appid": 730,
         "currency": 3,
