@@ -3,6 +3,10 @@
 Development history, dated feature summaries, validation notes and pull request
 links are recorded in the [development journal](docs/journal.md).
 
+For a single command that validates data, updates market prices, saves a global
+snapshot and prints the portfolio report, see the
+[one-command update workflow](docs/one-command-update.md).
+
 **CKIN2** is a personal project designed to track and analyze my **Counter-Strike 2 skin inventory**.
 
 The goal is to centralize my inventory data, maintain a historical record of its value, and progressively develop analysis tools to better understand the evolution of my skin portfolio.
