@@ -2,6 +2,8 @@
 
 For a quantity-based example and the distinction between empty and unimported
 categories, see [Understanding portfolio snapshots](portfolio-update.md).
+For optional local scheduling, shared locks, retries and private execution logs,
+see [Scheduled collection](scheduled-collection.md). No task is installed automatically.
 
 From the repository root, using the project virtual environment:
 

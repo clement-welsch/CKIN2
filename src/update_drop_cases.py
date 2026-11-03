@@ -80,12 +80,15 @@ def fetch_market_price(market_hash_name):
         print(f"Réponse JSON invalide de Steam pour {name_case}.")
         return None
 
+    return parse_market_price(data)
+
+
+def parse_market_price(data):
+    """Decode a successful Steam priceoverview payload without network access."""
     if not isinstance(data, dict) or data.get("success", True) is not True:
-        print(f"Réponse Steam sans succès pour {name_case}.")
         return None
     lowest_price = data.get("lowest_price")
     if not isinstance(lowest_price, str):
-        print(f"Aucun prix Steam disponible pour {name_case}.")
         return None
 
     # Steam may format prices with either decimal or thousands separators.
