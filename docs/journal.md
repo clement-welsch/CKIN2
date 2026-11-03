@@ -10,6 +10,31 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-03 - Optional scheduled collection and failure tracking (in review)
+
+Branch: `codex/scheduled-collection`. Tracking: [#34](https://github.com/clement-welsch/CKIN2/issues/34).
+Review: [PR #44](https://github.com/clement-welsch/CKIN2/pull/44), targeting `develop`; not merged.
+
+- Added an opt-in home/school wrapper around the unified portfolio workflow,
+  elapsed-UTC cadence, configurable timezone labels and a manual Windows task
+  registration script. No scheduled task was registered during development.
+- Shared a kernel process lock with manual unified home updates; process exit
+  releases it without deleting the lock file or evicting a live owner.
+- Reused the price parser with a bounded HTTPS retry adapter, classified errors,
+  exponential backoff and seconds/HTTP-date Retry-After support. Long waits defer
+  remaining listings and the next run rather than bypassing server cooldown.
+- Added atomic private run events, last-success/next-due state, interrupted-run
+  detection and condition-change-only console alerts, with no external connection.
+- Documented shutdown/sleep/offline behavior, partial-file persistence, manual
+  installation/removal and the difference between cadence and a fixed daily hour.
+
+Validation: all 98 tests passed; CLI help, Python compilation, PowerShell script
+syntax and `git diff --check` passed. Synthetic tests cover time, locking across process exit, retries,
+deferral, privacy, invalid mappings, repeated-alert suppression and school
+immutability. Full-suite and final validation results are recorded in the PR.
+The registration script is syntax-checked only; no live Steam calls, private CSV
+changes, notification connections or Task Scheduler installation were performed.
+
 ## 2026-11-01 - Reconcile portfolio update PR #43 with develop
 
 Branch: `codex/portfolio-update-command`.

@@ -1,0 +1,10 @@
+{
+  "interval_minutes": 1440,
+  "timezone": "Europe/Paris",
+  "attempts": 3,
+  "base_delay_seconds": 2,
+  "max_wait_seconds": 120,
+  "stale_days": 2,
+  "persistent_failures": 3,
+  "notification": "console"
+}

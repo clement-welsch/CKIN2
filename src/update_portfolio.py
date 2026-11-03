@@ -14,7 +14,21 @@ from update_market_prices import collect, validate_catalog
 SUCCESS, PARTIAL, FAILURE = 0, 1, 2
 
 
-def run(root=ROOT, environment="school", *, date=None, snapshot_path=None,
+def run(root=ROOT, environment="school", **options):
+    """Share the collection lock with scheduled runs; school stays read-only."""
+    if environment != "home":
+        return _run(root, environment, **options)
+    from collection_runtime import collection_lock
+    try:
+        with collection_lock(root):
+            return _run(root, environment, **options)
+    except OSError:
+        print("Collection lock unavailable; no update performed")
+        return dict(code=FAILURE, stages=[dict(stage="lock", status="failed")],
+                    current=pd.DataFrame(), historical=pd.DataFrame(), collection=pd.DataFrame())
+
+
+def _run(root=ROOT, environment="school", *, date=None, snapshot_path=None,
         clock=datetime.now, fetch=None, pause=time.sleep):
     """Return status and completed stages; preserve earlier successful writes."""
     stages, current, historical, collection = [], pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
