@@ -1,5 +1,9 @@
 # Experimental prediction (#27)
 
+For explicit forecast issuance, immutable revisions and realized-accuracy tracking,
+see [Forecast archive and realized accuracy](forecast-archive.md). The notebook
+only reads archives; it never creates or updates them.
+
 Open notebook/prediction_book.ipynb. It shares the fixed-cohort market index from
 the global notebook and forecasts next month's index, globally and per category.
 It does not forecast portfolio cash flows, quantities or realized gains. There
