@@ -10,6 +10,28 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-03 - Immutable forecast archive and realized accuracy (in review)
+
+Branch: `codex/forecast-archive`. Tracking: [#36](https://github.com/clement-welsch/CKIN2/issues/36).
+Review: [PR #46](https://github.com/clement-welsch/CKIN2/pull/46), targeting `develop`; not merged.
+
+- Added explicit one-month forecast issuance with frozen baskets/base prices,
+  weights, information cutoff, model parameters, software/source hashes and
+  available-data fingerprints. Real issues and retrospective simulations remain
+  separate; changed inputs require an explicit revision without overwriting.
+- Added read-only month-close evaluation with the archived freshness policy,
+  pending/unavailable states, zero-target support and MAE/RMSE on common method
+  windows. Revision, basket/base, code and settings groups are kept distinct.
+- Added a read-only tracking section to the prediction notebook and documented
+  atomic record publication, interrupted batches, private storage and limits of
+  historical observation timestamps versus ingestion-time provenance.
+
+Validation: all 132 tests passed, including 16 archive tests; CLI help, Python
+compilation and `git diff --check` passed. Tests use synthetic issuance, immutable retries, revisions, changing baskets,
+future exclusions, target coverage, model/baseline common windows and full notebook
+execution. The review reference is recorded in the PR.
+No live collection or private forecast issuance is performed during testing.
+
 ## 2026-11-03 - FIFO profit and loss report (in review)
 
 Branch: `codex/fifo-profit-loss`. Tracking: [#35](https://github.com/clement-welsch/CKIN2/issues/35).
