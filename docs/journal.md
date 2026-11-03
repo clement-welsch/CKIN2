@@ -10,6 +10,26 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-03 - FIFO profit and loss report (in review)
+
+Branch: `codex/fifo-profit-loss`. Tracking: [#35](https://github.com/clement-welsch/CKIN2/issues/35).
+Review: [PR #45](https://github.com/clement-welsch/CKIN2/pull/45), targeting `develop`; not merged.
+
+- Added a read-only EUR FIFO report for per-sale realized gains, remaining cost,
+  gross/estimated-net latent gains and item/category/global coverage.
+- Preserved unknown costs/fees, zero-cost drops, quantity reconciliation and
+  unavailable ROI for zero or unknown bases. Decimal cent allocations preserve
+  lot totals through partial sales.
+- Added optional private opening costs and explicit full-quantity internal
+  transfer links, retaining the original lot acquisition order on return.
+- Documented simultaneous/undated movement ambiguity, partial aggregates and
+  optional estimated sale fees without altering journal or inventory sources.
+
+Validation: all 116 tests passed (including 18 FIFO tests); CLI help, Python
+compilation and `git diff --check` passed. Tests use synthetic FIFO, fee, transfer,
+opening, coverage and read-only fixtures; the review reference is recorded in the PR.
+No tax treatment, currency conversion or live sale/price collection is included.
+
 ## 2026-11-03 - Optional scheduled collection and failure tracking (in review)
 
 Branch: `codex/scheduled-collection`. Tracking: [#34](https://github.com/clement-welsch/CKIN2/issues/34).
