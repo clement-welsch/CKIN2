@@ -1,5 +1,8 @@
 # Transaction journal (#25)
 
+For read-only FIFO costs, realized gains and latent gains based on this journal,
+see [FIFO gains and losses](profit-loss.md).
+
 ```powershell
 python src/transactions.py init-opening --date 2026-10-31T12:00:00
 python src/transactions.py import path/to/new_transactions.csv
