@@ -13,6 +13,7 @@ the journal.
 ## 2026-11-03 - Optional scheduled collection and failure tracking (in review)
 
 Branch: `codex/scheduled-collection`. Tracking: [#34](https://github.com/clement-welsch/CKIN2/issues/34).
+Review: [PR #44](https://github.com/clement-welsch/CKIN2/pull/44), targeting `develop`; not merged.
 
 - Added an opt-in home/school wrapper around the unified portfolio workflow,
   elapsed-UTC cadence, configurable timezone labels and a manual Windows task
