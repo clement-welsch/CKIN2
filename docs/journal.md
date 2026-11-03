@@ -13,6 +13,7 @@ the journal.
 ## 2026-11-03 - FIFO profit and loss report (in review)
 
 Branch: `codex/fifo-profit-loss`. Tracking: [#35](https://github.com/clement-welsch/CKIN2/issues/35).
+Review: [PR #45](https://github.com/clement-welsch/CKIN2/pull/45), targeting `develop`; not merged.
 
 - Added a read-only EUR FIFO report for per-sale realized gains, remaining cost,
   gross/estimated-net latent gains and item/category/global coverage.
