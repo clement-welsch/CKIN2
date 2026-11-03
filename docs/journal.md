@@ -13,6 +13,7 @@ the journal.
 ## 2026-11-03 - Immutable forecast archive and realized accuracy (in review)
 
 Branch: `codex/forecast-archive`. Tracking: [#36](https://github.com/clement-welsch/CKIN2/issues/36).
+Review: [PR #46](https://github.com/clement-welsch/CKIN2/pull/46), targeting `develop`; not merged.
 
 - Added explicit one-month forecast issuance with frozen baskets/base prices,
   weights, information cutoff, model parameters, software/source hashes and
