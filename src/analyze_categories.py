@@ -39,28 +39,40 @@ def category_price_figures(prices, acquisitions):
     return absolute, relative
 
 
-def analyze_category(inventory, prices):
-    """Keep unknown quantities visible and exclude them from valuation."""
+def prepare_category_prices(prices, *, keep_missing=False):
+    """Shared notebook/dashboard market normalization and per-item base 100."""
     prices, _ = split_price_records(prices)
     prices = prices.rename(columns={"item_name": "case_name"})
-    prices = prepare_price_history(prices).dropna(subset=["unit_price"])
+    prices = prepare_price_history(prices)
+    if keep_missing:
+        keys = ["case_name", "date"]
+        priced_keys = prices.loc[prices.unit_price.notna()].set_index(keys).index
+        prices = prices.loc[prices.unit_price.notna() | ~prices.set_index(keys).index.isin(priced_keys)]
+    else:
+        prices = prices.dropna(subset=["unit_price"])
     # Match valuation's last-nonmissing observation rule before building charts
     # or counting coverage; retain metadata from the selected market record.
     prices = prices.drop_duplicates(["case_name", "date"], keep="last")
+    prices = prices.rename(columns={"case_name": "item_name"}).sort_values(["item_name", "date"], kind="stable")
+    first = prices.groupby("item_name")["unit_price"].transform("first")
+    prices["index_100"] = prices.unit_price.div(first.where(first.ne(0))).mul(100)
+    return prices
+
+
+def analyze_category(inventory, prices):
+    """Keep unknown quantities visible and exclude them from valuation."""
+    prices = prepare_category_prices(prices)
     inventory = inventory.copy()
     inventory["quantity"] = pd.to_numeric(inventory["quantity"], errors="raise")
     unknown = inventory.loc[inventory.quantity.isna()].copy()
     known = inventory.loc[inventory.quantity.notna()].rename(columns={"item_name": "case_name"})
-    valuation = calculate_inventory_value(known, prices)
+    valuation = calculate_inventory_value(known, prices.rename(columns={"item_name": "case_name"}))
     summary = summarize_inventory_value(valuation)
     summary = {key.replace("cases", "items"): value for key, value in summary.items()}
     summary["items_without_quantity"] = len(unknown)
     if not unknown.empty:
         summary["total_value"] = float("nan")
     valuation = valuation.rename(columns={"case_name": "item_name"})
-    prices = prices.rename(columns={"case_name": "item_name"}).sort_values(["item_name", "date"])
-    first = prices.groupby("item_name")["unit_price"].transform("first")
-    prices["index_100"] = prices.unit_price.div(first.where(first.ne(0))).mul(100)
     coverage = prices.groupby("item_name").agg(
         first_date=("date", "min"), last_date=("date", "max"), observations=("unit_price", "size")
     )

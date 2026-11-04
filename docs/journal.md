@@ -10,6 +10,23 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-04 - Category dashboard views (in review)
+
+Branch: `codex/dashboard-category-views`. Tracking: #52. Depends on #51.
+
+- Added explicit dashboard navigation and separate category pages for all six
+  categories, including individual market series, coverage, value contributions
+  and clearly separated acquisition references.
+- Shared category price normalization/base-100 preparation with notebooks and
+  reused their Plotly figures. Model training is limited to the forecasts view.
+- Preserved local read-only loading, period/categorization semantics and source
+  attribution. Detailed object and research UI remain separate feature work.
+
+Validation: all 149 tests passed before the explicit-gap refinement; the three
+targeted category tests then passed with missing observations preserved as chart
+gaps. The final combined suite and browser checks follow with #53.
+No personal notebook or CSV is changed.
+
 ## 2026-11-04 - ByMykel attribution and source register (in review)
 
 Branch: `codex/bymykel-attribution`. Tracking: #51.
