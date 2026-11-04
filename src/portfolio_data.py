@@ -36,6 +36,19 @@ def validate_holdings(frame):
 
 
 def load_holdings(root=ROOT):
+    # A reviewed Steam import replaces quantities as one atomic document. Legacy
+    # CSVs (including purchase references) remain untouched and restorable.
+    override = Path(root) / "data/processed/steam_inventory_override.json"
+    if override.exists():
+        import json
+        data = json.loads(override.read_text(encoding="utf-8"))
+        imported = data.get("imported")
+        if data.get("schema") != 1 or not isinstance(imported, list) or not set(imported).issubset(CATEGORIES):
+            raise ValueError("Invalid Steam inventory override")
+        holdings = validate_holdings(pd.DataFrame(data["holdings"], columns=HOLDINGS))
+        if not set(holdings.category).issubset(imported):
+            raise ValueError("Steam holdings outside imported categories")
+        return holdings, set(imported)
     frames, imported = [], set()
     for prefix, category in FILES.items():
         path = Path(root) / "data/processed" / f"{prefix}_inventory.csv"
