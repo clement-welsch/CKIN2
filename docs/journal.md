@@ -10,6 +10,24 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-04 - Detailed dashboard item view (in review)
+
+Branch: `codex/dashboard-item-detail`. Tracking: #53. Depends on #52/#51.
+
+- Added literal-name search and exact variant selection across held, historical,
+  priced, local-catalog and eligible release identities, including unowned items.
+- Reused shared price charts/indices, reference separation and snapshot valuation.
+  Watchlist observations supplement item detail without inventing held quantities.
+- Displayed declared purchase metadata separately from FIFO costs/gains; unknown
+  basis and missing market data stay unavailable. Added an empty-provenance merge
+  correction for acquisition-only histories exposed by the regression tests.
+
+Validation: all 153 combined synthetic tests passed. Browser checks covered the
+category view, exact unowned variant, market/reference charts, source attribution
+and the 390px layout. A confirmed FIFO opening cost was checked separately from
+the declared CSV unit price. `git diff --check` passed. No personal notebook,
+inventory, credential or CSV is modified.
+
 ## 2026-11-04 - Category dashboard views (in review)
 
 Branch: `codex/dashboard-category-views`. Tracking: #52. Depends on #51.
