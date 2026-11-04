@@ -57,7 +57,11 @@ The project has several objectives:
 
 ## 🚧 Project Status
 
-The project is currently in the **data structuring and migration phase**.
+The project now includes multi-category collection and snapshots, transactions,
+global analysis, experimental prediction, scheduled updates, FIFO gains/losses
+and immutable forecast evaluation. The original roadmap below is historical;
+see the [2026-11-04 project assessment](docs/project-status-2026-11-04.md) for
+the implementation state and next-feature review links.
 
 ### Initial step
 
