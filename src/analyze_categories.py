@@ -26,10 +26,11 @@ def category_price_figures(prices, acquisitions):
     import plotly.graph_objects as go
 
     hover = ["date_estimated"] if "date_estimated" in prices else None
+    labels = {"date": "Date", "unit_price": "Prix unitaire (EUR)", "item_name": "Objet", "index_100": "Indice base 100"}
     absolute = px.line(prices, x="date", y="unit_price", color="item_name", markers=True,
-                       hover_data=hover, title="Prix de marche et references d'acquisition (EUR)")
+                       hover_data=hover, labels=labels, title="Prix de marché et références d’acquisition (EUR)")
     relative = px.line(prices, x="date", y="index_100", color="item_name", markers=True,
-                       hover_data=hover, title="Base 100 au premier releve de marche (hors acquisitions)")
+                       hover_data=hover, labels=labels, title="Base 100 au premier relevé de marché (hors acquisitions)")
     for name, group in acquisitions.groupby("item_name"):
         absolute.add_trace(go.Scatter(
             x=group.date, y=group.unit_price, mode="markers",

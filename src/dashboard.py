@@ -20,6 +20,8 @@ from prediction import experiment
 from transactions import COLUMNS as TRANSACTIONS, validate_transactions
 from source_attribution import sources_page
 from dashboard_categories import LABELS, category_data, category_figures, value_distribution
+from dashboard_categories import figure_html
+from dashboard_items import independent_prices, item_details, item_registry
 
 
 def escaped(value):
@@ -59,6 +61,7 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
     categories = set(CATEGORIES) if category == "all" else {category}
     registry = pd.concat([data["holdings"][["item_id", "category", "item_name"]],
                           data["history"].loc[data["history"].state.eq("holdings"), ["item_id", "category", "item_name"]]]).drop_duplicates("item_id")
+    registry = item_registry(root, registry, pd.concat([data["prices"], independent_prices(root, cutoff)], ignore_index=True), cutoff)
     if item_id and item_id not in set(registry.loc[registry.category.isin(categories), "item_id"]):
         raise ValueError("Unknown object for this category")
     # Current holdings cannot be projected backward when end precedes now.
@@ -88,7 +91,7 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
     if start is not None:
         transactions = transactions.loc[transactions.date.isna() | transactions.date.ge(start)]
     pnl, pnl_message = pd.DataFrame(), "Gains/pertes indisponibles : inventaire initial absent."
-    if components in (None, "performance") and (root / "data/processed/opening_inventory.csv").exists():
+    if components in (None, "performance", "item") and (root / "data/processed/opening_inventory.csv").exists():
         from profit_loss import report
         with contextlib.redirect_stdout(io.StringIO()):
             pnl = report(root, when=cutoff)["items"]
@@ -114,7 +117,8 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
 def table(frame):
     if frame.empty:
         return '<p class="empty">Aucune donnée disponible pour cette sélection.</p>'
-    return '<div class="table">' + frame.to_html(index=False, na_rep="N/A", escape=True, border=0, float_format=lambda x: f"{x:,.2f}") + '</div>'
+    display = frame.astype(object).where(frame.notna(), "N/A")
+    return '<div class="table">' + display.to_html(index=False, na_rep="N/A", escape=True, border=0, float_format=lambda x: f"{x:,.2f}") + '</div>'
 
 
 def chart(frame, x, y, title):
@@ -133,6 +137,7 @@ def render(root=ROOT, params=None, now=None):
              "performance": "Performance · Gains et pertes", "forecasts": "Prévisions", "community": "Recherche"}
     if page not in pages:
         raise ValueError("Unknown dashboard view")
+    search = params.pop("search", "").strip()
     allowed = {"category", "item_id", "start", "end"}
     if not set(params).issubset(allowed):
         raise ValueError("Unknown filter")
@@ -144,6 +149,7 @@ def render(root=ROOT, params=None, now=None):
     category = params.get("category", "all")
     categories = ''.join(f'<option value="{c}" {"selected" if c == category else ""}>{LABELS[c]}</option>' for c in ["all", *CATEGORIES])
     registry = data["registry"].loc[data["registry"].category.isin(data["categories"])]
+    search_results = registry.loc[registry.item_name.str.contains(search, case=False, regex=False)] if search else registry
     options = '<option value="">Tous les objets</option>' + ''.join(
         f'<option value="{escaped(r.item_id)}" {"selected" if r.item_id == params.get("item_id") else ""}>{escaped(r.item_name)}</option>'
         for r in registry.sort_values("item_name").itertuples())
@@ -184,16 +190,55 @@ def render(root=ROOT, params=None, now=None):
                 content += '<p class="empty">Aucun historique de marché disponible.</p>'
             content += "<h3>Références d’acquisition</h3><p>Repères séparés, exclus des prix de marché et des coûts d’achat confirmés.</p>" + table(result["acquisitions"])
             body += section(LABELS[result["category"]], content)
+    selected_detail = None
+    if page == "item":
+        links = "".join('<li><a style="color:#f8b55c" href="/?' +
+                        escaped(urlencode({**params, "page": "item", "item_id": row.item_id})) + '">' +
+                        escaped(row.item_name) + " · " + LABELS[row.category] + "</a></li>" for row in search_results.itertuples())
+        body = section("Trouver un objet", '<form method="get"><input type="hidden" name="page" value="item">' +
+                       "".join('<input type="hidden" name="' + key + '" value="' + escaped(params[key]) + '">' for key in ("category", "start", "end") if params.get(key)) +
+                       '<label>Nom ou variante<input name="search" value="' + escaped(search) + '" placeholder="Nom exact, usure, StatTrak…"></label><button>Rechercher</button></form><ul>' +
+                       (links or "<li>Aucun objet correspondant.</li>") + "</ul>")
+        if params.get("item_id"):
+            start_filter = _parse_dates(pd.Series([params["start"]]), "period start").iloc[0] if params.get("start") else None
+            detail = item_details(root, data, params["item_id"], start_filter)
+            selected_detail = detail
+            title = escaped(detail["item"]["item_name"])
+            content = "<p>Objet détenu dans l’inventaire sélectionné.</p>" if detail["held"] else "<p>Objet suivi, sans position dans l’inventaire sélectionné. Aucune quantité possédée n’est déduite du catalogue.</p>"
+            labels = {"item_id": "Identifiant", "category": "Catégorie", "item_name": "Nom", "market_hash_name": "Nom Steam exact",
+                      "metadata_source": "Source des métadonnées", "metadata_revision": "Révision", "collection": "Collection",
+                      "source_id": "Identifiant source", "variant": "Variante", "wear": "Usure", "metadata_collected_at": "Date d’import"}
+            content += table(pd.DataFrame([{"Propriété": label, "Valeur": detail["item"].get(key)} for key, label in labels.items()]))
+            content += table(pd.DataFrame([{"Dernier prix (EUR)": detail["latest_price"], "Date du prix": detail["latest_date"],
+                                            "Ancienneté (jours)": detail["age_days"], "Observations": detail["observations"], "Date de base 100": detail["base_date"]}]))
+            content += "<p>Prix de marché observés en EUR ; la médiane historique des ventes Steam n’est pas encore importée. Base 100 au premier prix non manquant avant la date de fin, hors références d’acquisition. Base nulle = indice indisponible ; trous et dates estimées restent visibles.</p>"
+            if detail["held"]:
+                content += table(detail["summary"]) + table(detail["valuation"])
+            content += "<h3>Coût et performance</h3><p>Prix d’achat déclaré dans le CSV, sans déduction depuis les références. Un coût absent reste inconnu. Ce prix unitaire ne prouve pas le coût FIFO de lots actuels.</p>"
+            content += table(pd.DataFrame([{"Prix unitaire déclaré (EUR)": detail["purchase_metadata"]["purchase_unit_price"],
+                                            "Date d’achat déclarée": detail["purchase_metadata"]["purchase_date"]}]))
+            content += "<p>Gains et coût restant calculés par le module FIFO, lorsqu’un inventaire initial et un journal réconciliable sont disponibles.</p>" + table(detail["gains"])
+            if not detail["prices"].empty or not detail["acquisitions"].empty:
+                from analyze_categories import category_price_figures
+                content += "".join(figure_html(figure) for figure in category_price_figures(detail["prices"], detail["acquisitions"]))
+            else:
+                content += '<p class="empty">Prix et graphiques indisponibles.</p>'
+            content += "<h3>Références d’acquisition</h3><p>Repères uniquement : ni prix de marché ni achat confirmé.</p>" + table(detail["acquisitions"])
+            content += '<p>Métadonnées tierces : consulter <a style="color:#f8b55c" href="/sources">Sources et licences — ByMykel / CSGO-API</a> pour la provenance et les droits associés.</p>'
+            body += section(title, content)
     navigation = '<nav aria-label="Vues du dashboard">' + "".join(
         '<a ' + ('aria-current="page" ' if key == page else '') + 'href="/?' +
         escaped(urlencode({**params, "page": key})) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/sources">Sources et licences</a></nav>'
     latest_price = data["detail"].price_date.max() if len(data["detail"]) else pd.NaT
+    if selected_detail is not None:
+        latest_price = selected_detail["latest_date"]
     last_snapshot = data["historical"].snapshot_date.max() if len(data["historical"]) else pd.NaT
+    latest_price = latest_price if pd.notna(latest_price) else "Indisponible"
+    last_snapshot = last_snapshot if pd.notna(last_snapshot) else "Indisponible"
     return f'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CKIN2 · Portefeuille</title><script src="/plotly.js"></script><style>
 *{{box-sizing:border-box}}body{{margin:0;background:#101720;color:#e6edf5;font:15px/1.6 system-ui,sans-serif}}main{{max-width:1440px;margin:auto;padding:32px}}h1{{font-size:38px;margin:0}}h2{{font-size:22px}}.eyebrow{{color:#f8b55c;letter-spacing:3px}}p,small{{color:#acbbcd}}section,form{{background:#17202b;border:1px solid #2b394b;border-radius:16px;padding:24px;margin:22px 0}}form{{display:flex;flex-wrap:wrap;gap:16px;align-items:end}}label{{display:grid;gap:6px;min-width:140px;flex:1}}select,input,button{{font:inherit;border:1px solid #526079;border-radius:7px;padding:10px;background:#101720;color:#e6edf5;max-width:100%;min-width:0}}button{{background:#f8b55c;color:#101720;cursor:pointer}}.cards{{display:flex;gap:20px;flex-wrap:wrap}}article{{flex:1;min-width:220px;padding:20px;background:#101720;border-radius:10px}}strong{{display:block;font-size:28px}}.table{{overflow:auto;max-height:480px}}table{{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}}td,th{{padding:10px;border-bottom:1px solid #324154;text-align:left}}th{{position:sticky;top:0;background:#202d3d}}.empty{{padding:20px;border:1px dashed #526079;border-radius:10px}}@media(max-width:650px){{main{{padding:14px}}section,form{{padding:14px}}h1{{font-size:29px}}label{{min-width:100%}}.cards{{display:block}}article{{margin-bottom:12px}}}}
 </style><style>nav{{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}}nav a{{color:#d4deeb;text-decoration:none;padding:10px 15px;border:1px solid #526079;border-radius:9px}}nav a[aria-current]{{background:#f8b55c;color:#101720}}h3{{font-size:17px}}</style></head><body><main><div class="eyebrow">CKIN2 / OBSERVATOIRE</div><h1>Mon portefeuille CS2</h1>{navigation}
-<p><a href="/sources" style="color:#f8b55c">Sources et licences</a></p>
 <p>Lecture seule · données locales · actualisé à chaque chargement · analyse au {escaped(data["cutoff"])}<br>Dernier prix utilisé : {escaped(latest_price)} · dernier snapshot de la période : {escaped(last_snapshot)}</p>
 <form method="get"><input type="hidden" name="page" value="{escaped(page)}"><label>Catégorie<select name="category" onchange="this.form.elements.item_id.value=''">{categories}</select></label><label>Objet<select name="item_id">{options}</select></label><label>Depuis<input type="date" name="start" value="{escaped(params.get("start", ""))}"></label><label>Jusqu’au<input type="date" name="end" value="{escaped(params.get("end", ""))}"></label><button>Actualiser</button><a href="/?page={escaped(page)}" style="color:#f8b55c">Réinitialiser</a></form>{body}</main></body></html>'''
 
