@@ -1,0 +1,2 @@
+# Preserve the reviewed upstream license bytes on Windows and Unix checkouts.
+licenses/ByMykel-CSGO-API-MIT.txt text eol=lf
