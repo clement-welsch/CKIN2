@@ -10,6 +10,34 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-04 - Next-feature assessment and offline community research (in review)
+
+Branch: `codex/community-signals`. Tracking: [#40](https://github.com/clement-welsch/CKIN2/issues/40).
+
+- Assessed actual remote implementation and selected the four remaining open
+  features: dashboard #37, assisted inventory import #38, independent market
+  universe #39 and community research #40. See the
+  [dated assessment](project-status-2026-11-04.md) for review links and limits.
+- Added inert TXT/SRT/VTT imports, explicit verified-channel metadata,
+  exact/family/ambiguous aliases, timestamped evidence links, annotation
+  provenance and duplicate-content grouping. Unverified channels remain inert.
+- Added monthly walk-forward price-only versus community-feature Ridge
+  comparisons, common-window baselines/MAE/RMSE and explicit insufficient-history
+  diagnostics. Future collection/annotations cannot enter historical features.
+- Added a read-only research notebook and tests for absent/populated synthetic
+  corpora, subtitle parsing, duplicate mentions, unknown matches, temporal
+  availability and future-price exclusions.
+
+Real channel verification, authorized corpus acquisition, annotation review and
+empirical predictive benefit remain unverified. No live Steam/YouTube calls,
+personal CSV writes, issued forecasts or full transcript publication occur.
+Validation: full branch suite passed 143 tests, including 5 community tests and
+complete notebook execution with absent and synthetic populated corpora.
+After integrating the reviewed dashboard #49, all four features passed 145 tests
+together. One preceding run hit a transient Windows access-denied error in an
+existing scheduler test's temporary-file replacement; the unchanged full rerun
+passed. `pip check`, notebook schema validation and `git diff --check` passed.
+
 ## 2026-11-03 - Immutable forecast archive and realized accuracy (in review)
 
 Branch: `codex/forecast-archive`. Tracking: [#36](https://github.com/clement-welsch/CKIN2/issues/36).
