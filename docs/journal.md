@@ -10,6 +10,23 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-04 - ByMykel attribution and source register (in review)
+
+Branch: `codex/bymykel-attribution`. Tracking: #51.
+
+- Pinned the upstream MIT license review to commit
+  b014e92bc37f4143ead2cb1af26aa85f2c3d6688 and retained its exact text/copyright.
+- Added notices, an actual-use register and review guidance for changed sources
+  or personal/public/hosted/commercial distribution. Valve assets remain outside
+  the cleared scope; no upstream catalog, code or images are bundled.
+- Added an offline dashboard source page showing attribution, full license and
+  declared local release provenance without loading portfolio analysis.
+
+Validation: all 147 synthetic tests passed, including source-page HTTP/render
+checks and the existing dashboard suite. The retained license hash matches the
+pinned upstream copy; `git diff --check` passed. No personal notebooks or CSVs
+are changed.
+
 ## 2026-11-04 - Next-feature assessment and offline community research (in review)
 
 Branch: `codex/community-signals`. Tracking: [#40](https://github.com/clement-welsch/CKIN2/issues/40).

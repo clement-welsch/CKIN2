@@ -3,6 +3,11 @@
 The market universe, watchlist and owned portfolio are separate. Nothing here
 changes an inventory quantity or its existing collection schedule.
 
+Before importing or distributing catalog material, follow the
+[ByMykel source/license review](third-party-sources.md) and preserve
+[required notices](../THIRD_PARTY_NOTICES.md). Record the actual upstream revision
+in each release; the license review reference is not a substitute for provenance.
+
 Source selected for a first reviewed import: the unofficial
 [ByMykel/CSGO-API](https://github.com/ByMykel/CSGO-API) English catalog.
 Download a pinned Git commit's JSON locally and record its exact source URL,

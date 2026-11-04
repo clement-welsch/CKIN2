@@ -18,6 +18,7 @@ from global_snapshots import COLUMNS, build_snapshot, value_snapshots
 from portfolio_data import CATEGORIES, ROOT, _parse_dates
 from prediction import experiment
 from transactions import COLUMNS as TRANSACTIONS, validate_transactions
+from source_attribution import sources_page
 
 
 def escaped(value):
@@ -164,6 +165,7 @@ def render(root=ROOT, params=None, now=None):
 <title>CKIN2 · Portefeuille</title><script src="/plotly.js"></script><style>
 *{{box-sizing:border-box}}body{{margin:0;background:#101720;color:#e6edf5;font:15px/1.6 system-ui,sans-serif}}main{{max-width:1440px;margin:auto;padding:32px}}h1{{font-size:38px;margin:0}}h2{{font-size:22px}}.eyebrow{{color:#f8b55c;letter-spacing:3px}}p,small{{color:#acbbcd}}section,form{{background:#17202b;border:1px solid #2b394b;border-radius:16px;padding:24px;margin:22px 0}}form{{display:flex;flex-wrap:wrap;gap:16px;align-items:end}}label{{display:grid;gap:6px;min-width:140px;flex:1}}select,input,button{{font:inherit;border:1px solid #526079;border-radius:7px;padding:10px;background:#101720;color:#e6edf5;max-width:100%;min-width:0}}button{{background:#f8b55c;color:#101720;cursor:pointer}}.cards{{display:flex;gap:20px;flex-wrap:wrap}}article{{flex:1;min-width:220px;padding:20px;background:#101720;border-radius:10px}}strong{{display:block;font-size:28px}}.table{{overflow:auto;max-height:480px}}table{{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}}td,th{{padding:10px;border-bottom:1px solid #324154;text-align:left}}th{{position:sticky;top:0;background:#202d3d}}.empty{{padding:20px;border:1px dashed #526079;border-radius:10px}}@media(max-width:650px){{main{{padding:14px}}section,form{{padding:14px}}h1{{font-size:29px}}label{{min-width:100%}}.cards{{display:block}}article{{margin-bottom:12px}}}}
 </style></head><body><main><div class="eyebrow">CKIN2 / OBSERVATOIRE</div><h1>Mon portefeuille CS2</h1>
+<p><a href="/sources" style="color:#f8b55c">Sources et licences</a></p>
 <p>Lecture seule · données locales · actualisé à chaque chargement · analyse au {escaped(data["cutoff"])}<br>Dernier prix utilisé : {escaped(latest_price)} · dernier snapshot de la période : {escaped(last_snapshot)}</p>
 <form method="get"><label>Catégorie<select name="category">{categories}</select></label><label>Objet<select name="item_id">{options}</select></label><label>Depuis<input type="date" name="start" value="{escaped(params.get("start", ""))}"></label><label>Jusqu’au<input type="date" name="end" value="{escaped(params.get("end", ""))}"></label><button>Actualiser</button><a href="/" style="color:#f8b55c">Réinitialiser</a></form>{body}</main></body></html>'''
 
@@ -178,6 +180,8 @@ def make_server(root=ROOT, port=8765):
             try:
                 if path.path == "/plotly.js":
                     content, mime = get_plotlyjs(), "application/javascript"
+                elif path.path == "/sources":
+                    content, mime = sources_page(root), "text/html; charset=utf-8"
                 elif path.path == "/":
                     query = parse_qs(path.query)
                     if any(len(values) != 1 for values in query.values()):
