@@ -349,6 +349,15 @@ The analyses produced by CKIN2 should therefore be considered **data analysis to
 
 ## 🔐 Data Privacy
 
+### Third-party attribution
+
+The optional market catalog references **ByMykel / CSGO-API**. See
+[third-party notices](THIRD_PARTY_NOTICES.md) and the
+[source register](docs/third-party-sources.md) for the pinned MIT license review,
+actual-import provenance and rights not covered by that review. The local
+dashboard's **Sources et licences** page includes the attribution and full
+license offline. New source versions and distribution uses require review.
+
 The inventory data used by CKIN2 is personal.
 
 Files containing private or sensitive information should not be committed to Git.
