@@ -94,6 +94,12 @@ Branch: `codex/local-catalog-import`. Relates to #39 only.
 
 ## 2026-11-09 - Reviewed community extraction evaluation (in review)
 
+Follow-up: `codex/community-error-diagnostics` (#40, review pending) adds metrics
+by match kind and identity/timestamp evidence for false positives and missed
+mentions, without transcript text. Three focused tests and the combined
+four-feature suite of 178 tests passed on synthetic data. Real extraction quality
+and predictive benefit remain unverified.
+
 Branch: `codex/community-extraction-evaluation`. Relates to #40.
 
 - Added optional manually reviewed passage labels and extraction precision,
