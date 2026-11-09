@@ -1,5 +1,13 @@
 # Development journal
 
+## 2026-11-09 - Local catalog source audit
+
+Branch: `codex/catalog-source-audit`. Relates to #39; review pending.
+Added read-only per-record eligibility, duplicate exclusion and variant counts
+before human selection, reusing the reviewed skin adapter contract. Five focused
+synthetic tests passed, including CLI file preservation and invalid provenance.
+Eligibility does not establish whole-market coverage or authenticate upstream.
+
 Entries record development and integration milestones in reverse chronological
 order. Dates use Europe/Paris. Status statements describe the time of writing;
 linked issues and pull requests remain the source for their current status.

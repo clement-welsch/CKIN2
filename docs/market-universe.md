@@ -1,5 +1,16 @@
 # Independent market universe (#39)
 
+## Audit a supplied skin catalog before selection
+
+`python src/catalog_import.py school --source data/market/source-skins.json --audit --revision EXACT_40_CHARACTER_COMMIT --source-updated-at 2026-11-01 --collected-at 2026-11-09`
+
+This read-only audit reports each source record's eligibility under the existing
+skin import contract, with rejection reasons and counts by variant. All records
+sharing a source ID or valid catalog identity are excluded rather than choosing
+the first occurrence. Eligible IDs help prepare a human-reviewed selection;
+the audit does not publish a release or certify upstream origin, market coverage,
+tradability or prices. Input bytes and declared provenance accompany the report.
+
 The market universe, watchlist and owned portfolio are separate. Nothing here
 changes an inventory quantity or its existing collection schedule.
 
