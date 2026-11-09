@@ -6,6 +6,14 @@
   const buttons=['save','open','rename','delete'].map(x=>document.getElementById('favorite-'+x));
   const pages=new Set(['overview','inventory','categories','item','performance','forecasts','community','reconciliation','quality','comparison']);
   const fields=new Set(['page','category','item_id','start','end','period','search','sort','direction','price_status','quantity_status','page_number','page_size','observation_account','comparison_before','comparison_after']);
+  function validDate(value){
+    const match=/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?)?$/.exec(value);
+    if(!match)return false;
+    const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+    if(year<1||month<1||month>12||day<1||Number(match[4]||0)>23||Number(match[5]||0)>59||Number(match[6]||0)>59)return false;
+    const date=new Date(0);date.setUTCFullYear(year,month-1,day);
+    return date.getUTCFullYear()===year&&date.getUTCMonth()===month-1&&date.getUTCDate()===day&&Number.isFinite(Date.parse(value));
+  }
   function validURL(value){
     if(typeof value!=='string'||value.length>4000||!value.startsWith('/?'))return false;
     const url=new URL(value,location.origin);
@@ -14,7 +22,7 @@
       if(!fields.has(k)||url.searchParams.getAll(k).length!==1||v.length>500)return false;
       if(k==='category'&&!['all','case','skin','souvenir','sticker','charm','agent'].includes(v))return false;
       if(k==='item_id'&&v&&!/^[0-9a-f-]{36}$/.test(v))return false;
-      if(['start','end','comparison_before','comparison_after'].includes(k)&&v&&(!/^\d{4}-\d{2}-\d{2}(T[\d:.]+)?$/.test(v)||!Number.isFinite(Date.parse(v))))return false;
+      if(['start','end','comparison_before','comparison_after'].includes(k)&&v&&!validDate(v))return false;
       if(k==='period'&&!['all','custom','30d','90d','365d'].includes(v))return false;
       if(k==='sort'&&!['item_name','category','quantity','unit_price','price_date','market_value'].includes(v))return false;
       if(k==='direction'&&!['asc','desc'].includes(v))return false;
@@ -34,8 +42,8 @@
     buttons[1].disabled=!select.value;buttons[2].disabled=!writable||!select.value;buttons[3].disabled=!writable||!select.value;
   }
   try{
-    const raw=JSON.parse(localStorage.getItem(key)||'[]');
-    if(!Array.isArray(raw)||raw.length>100)throw new Error('invalid');
+    let raw=JSON.parse(localStorage.getItem(key)||'[]');
+    if(!Array.isArray(raw)||raw.length>100){raw=[];message('Liste de favoris invalide : aucune vue chargée. Une sauvegarde explicite remplacera cette liste.');}
     const ids=new Set();
     views=raw.filter(v=>v&&typeof v.id==='string'&&v.id.length>0&&v.id.length<100&&!ids.has(v.id)&&ids.add(v.id)&&typeof v.name==='string'&&v.name.trim().length>0&&v.name.length<=80&&validURL(v.url));
     if(views.length!==raw.length)message('Certaines vues invalides ou obsolètes ont été ignorées.');

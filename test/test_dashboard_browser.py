@@ -89,12 +89,17 @@ class BrowserAcceptanceTests(unittest.TestCase):
     def test_invalid_obsolete_and_unavailable_browser_storage(self):
         from playwright.sync_api import expect
         context=self.context();page=context.new_page();page.goto(self.url,wait_until='networkidle')
-        page.evaluate('localStorage.setItem("ckin2.views.v1",JSON.stringify([{id:"bad",name:"External",url:"https://example.com"},{id:"old",name:"Ancien objet",url:"/?page=item&item_id=00000000-0000-0000-0000-000000000000"}]))')
+        page.evaluate('localStorage.setItem("ckin2.views.v1",JSON.stringify([{id:"bad",name:"External",url:"https://example.com"},{id:"date",name:"Date invalide",url:"/?page=performance&end=2026-02-31"},{id:"old",name:"Ancien objet",url:"/?page=item&item_id=00000000-0000-0000-0000-000000000000"}]))')
         page.reload(wait_until='networkidle')
         expect(page.locator('#favorite-status')).to_have_text('Certaines vues invalides ou obsolètes ont été ignorées.')
         self.assertEqual(page.locator('#favorite-select option').count(),2)
         page.get_by_label('Vue enregistrée').select_option('old');page.get_by_role('button',name='Ouvrir',exact=True).click()
         expect(page.get_by_text('Objet réinitialisé',exact=False)).to_be_visible()
+        page.evaluate('localStorage.setItem("ckin2.views.v1","{}")')
+        page.reload(wait_until='networkidle')
+        self.assertIn('Liste de favoris invalide',page.locator('#favorite-status').inner_text())
+        self.assertFalse(page.locator('#favorite-save').is_disabled())
+        self.assertEqual(page.evaluate('localStorage.getItem("ckin2.views.v1")'),'{}')
         unavailable=self.context()
         unavailable.add_init_script('Object.defineProperty(window,"localStorage",{get(){throw new DOMException("Denied","SecurityError")}})')
         denied=unavailable.new_page();denied.goto(self.url,wait_until='networkidle')
