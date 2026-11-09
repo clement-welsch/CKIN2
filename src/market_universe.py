@@ -123,6 +123,32 @@ def compare_releases(previous, current):
                 limits="Reviewed selections only; no delisting, exhaustive coverage or automatic identity migration inferred.")
 
 
+def preview_watchlist_migration(previous, current, watchlist):
+    """Propose source-ID successors; changed identities require human review."""
+    comparison = compare_releases(previous, current)
+    known = {row['item_id']: row['source_id'] for row in previous['items']}
+    if (not isinstance(watchlist, list) or not all(isinstance(key, str) for key in watchlist)
+            or len(set(watchlist)) != len(watchlist) or not set(watchlist).issubset(known)):
+        raise ValueError('Watchlist must contain unique previous-release identities')
+    changes = {row['source_id']: row for row in comparison['changes']}
+    rows, retained = [], []
+    for key in watchlist:
+        change = changes[known[key]]
+        successor = change['after']
+        status = change['status']
+        # Even unchanged item IDs can hide changed listing or variant metadata.
+        safe = status in ('unchanged', 'metadata_changed')
+        if safe:
+            retained.append(successor['item_id'])
+        rows.append(dict(previous_item_id=key, proposed_item_id=successor['item_id'] if successor else None,
+                         source_id=known[key], status=status, requires_review=not safe,
+                         changed_fields=change['changed_fields'], before=change['before'], after=successor))
+    return dict(previous_release_id=comparison['previous_release_id'], current_release_id=comparison['current_release_id'],
+                retained_watchlist=retained, entries=rows, requires_review=any(row['requires_review'] for row in rows),
+                limits='Preview only. Renames and variant changes are proposals, never automatic replacements. '
+                       'Removed selections are unresolved; no additions or historical observations are migrated.')
+
+
 def collect(root, key, watchlist, *, environment="school", now=None, budget=20, fetch=None, pause=time.sleep):
     """Explicit finite selection; at most budget requests, with bounded transport retries."""
     if environment not in ("school", "home") or type(budget) is not int or not 0 <= budget <= 1000:
@@ -190,8 +216,17 @@ if __name__ == "__main__":
     parser.add_argument("--budget", type=int, default=20)
     parser.add_argument("--compare", nargs=2, metavar=("PREVIOUS_RELEASE", "CURRENT_RELEASE"),
                         help="Read-only source-ID comparison of two published releases")
+    parser.add_argument('--migrate-watchlist', nargs=2, metavar=('PREVIOUS_RELEASE', 'CURRENT_RELEASE'),
+                        help='Read-only migration preview; requires --watchlist')
     args = parser.parse_args()
-    if args.compare:
+    if args.migrate_watchlist:
+        if args.compare or args.publish or args.release or not args.watchlist:
+            parser.error('--migrate-watchlist requires --watchlist and excludes other operations')
+        previous, _ = load_release(args.root, args.migrate_watchlist[0], pd.Timestamp.now())
+        current, _ = load_release(args.root, args.migrate_watchlist[1], pd.Timestamp.now())
+        watchlist = json.loads(args.watchlist.read_text(encoding='utf-8'))
+        print(json.dumps(preview_watchlist_migration(previous, current, watchlist), ensure_ascii=True, indent=2))
+    elif args.compare:
         if args.publish or args.release or args.watchlist:
             parser.error("--compare cannot be combined with publish/collection arguments")
         previous, _ = load_release(args.root, args.compare[0], pd.Timestamp.now())

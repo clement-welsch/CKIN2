@@ -115,3 +115,14 @@ Coverage reports supplied source record count and selected/unselected counts.
 It is a fraction of that file, not Steam market completeness, tradability,
 availability or successful pricing coverage. No real catalog release or price
 collection is bundled in this delivery. Required ByMykel notices remain in force.
+
+## Watchlist migration preview
+
+`python src/market_universe.py school --migrate-watchlist OLD_HASH NEW_HASH --watchlist data/market/watchlist.json`
+
+The read-only report matches selected items by source ID across integrity-checked
+releases. It retains unchanged identities and collection-only metadata changes.
+Renames, variant/wear changes and removed selections require explicit review;
+proposed successor IDs include before/after evidence. New catalog entries are
+never added automatically. No watchlist, price series or holdings are written.
+An empty watchlist is valid. Both releases must be available at execution time.

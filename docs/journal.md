@@ -470,3 +470,11 @@ dates or prices are recorded in this journal.
 Tracking: [#16](https://github.com/clement-welsch/CKIN2/issues/16) covers
 category conversion and notebooks. [#11](https://github.com/clement-welsch/CKIN2/issues/11)
 remains open for dependencies, fresh-environment installation and CI.
+
+## 2026-11-09 - Watchlist migration preview
+
+Branch: `codex/watchlist-migration-preview`. Relates to #39; review pending.
+Added source-ID successor proposals with before/after evidence and explicit
+review for renames, variant changes and removals. No automatic identity or price
+migration. Two synthetic tests passed, including read-only school CLI execution.
+Real source continuity remains a reviewer responsibility.
