@@ -52,3 +52,29 @@ network or write, including locks. Public endpoint volume/access may change.
 release hash, uses equal item weights and excludes prices before catalog
 availability or after the origin. It reuses shared freshness, zero-base and
 coverage rules. No retrospective membership or portfolio weighting is inferred.
+
+## Compare reviewed catalog versions
+
+```powershell
+python src/market_universe.py school --root . --compare PREVIOUS_RELEASE_HASH CURRENT_RELEASE_HASH
+```
+
+This read-only command loads two eligible, integrity-checked local releases and
+matches only their `source_id` values. It reports additions, removals from the
+selection, renames, variant/wear/category changes, other metadata changes and
+unchanged entries. Exact before/after records, changed fields, scope, source
+revisions and release hashes stay visible. Optional wear/collection JSON nulls
+remain valid alongside real strings.
+
+Different source URLs and reversed collection chronology are rejected; IDs
+cannot be assumed continuous across sources. Both releases must have been
+collected by the analysis time. A changed source ID is an addition/removal even
+if the display name is identical; no fuzzy matching is used. A removal means
+absence from the reviewed selection, not proof of market delisting. Variant or
+wear changes under the same source ID require explicit review.
+
+Comparison does not rewrite historical observations, migrate watchlists or merge
+quantities. Old identities remain in their original releases and observations.
+Review proposed identity changes before preparing a new watchlist. This does not
+measure whole-market coverage or download/expand an upstream catalog; #39's real
+catalog acquisition and coverage assessment remain separate work.

@@ -51,6 +51,20 @@ Branch: `codex/dashboard-performance`. Tracking: #54.
   parity, period boundaries, empty data and unchanged fixture files. Initial
   baseline: 153 tests passed. No Steam access or personal data writes.
 
+## 2026-11-09 - Read-only market release comparison (in review)
+
+Branch: `codex/market-release-comparison`. Relates to #39.
+
+- Added source-ID comparisons for reviewed release additions, selection removals,
+  renames, identity metadata and other changes, with exact before/after evidence.
+- Kept observations/watchlists immutable; different sources and reverse chronology
+  fail explicitly. Selection removals do not imply Steam market delistings.
+- Corrected nullable wear/collection validation to inspect original JSON values,
+  avoiding pandas mixed-string null inference rejecting legitimate metadata.
+- All 164 tests passed, including five market tests and the school comparison
+  CLI on synthetic releases. Whitespace checks passed. No live
+  source download, personal CSV/notebook change or market-wide coverage claim.
+
 ## 2026-11-09 - Steam history study preparation (in review)
 
 Branch: `codex/steam-history-study`. Relates to #57; does not close it.
