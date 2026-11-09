@@ -17,6 +17,11 @@ For a single command that validates data, updates market prices, saves a global
 snapshot and prints the portfolio report, see the
 [one-command update workflow](docs/one-command-update.md).
 
+[Notebooks and dashboard share portfolio quantities, prices and coverage](docs/category-notebooks.md#shared-portfolio-contract-78),
+including owner replacements and recent observations. `CKIN2_DATA_ROOT` and
+`CKIN2_AS_OF` make notebook scope and analysis time explicit; historical mode
+uses recorded snapshot quantities.
+
 **CKIN2** is a personal project designed to track and analyze my **Counter-Strike 2 skin inventory**.
 
 The goal is to centralize my inventory data, maintain a historical record of its value, and progressively develop analysis tools to better understand the evolution of my skin portfolio.

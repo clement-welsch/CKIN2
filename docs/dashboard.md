@@ -33,6 +33,15 @@ Tables scroll horizontally on narrow screens. Charts resize and preserve gaps;
 missing full totals are never connected across incomplete snapshots. The
 dashboard is French; repository interfaces/documentation remain English.
 
+## Notebook consistency (#78)
+
+The dashboard and category notebooks share snapshot selection and valuation.
+See [the notebook contract](category-notebooks.md#shared-portfolio-contract-78)
+for data-root, analysis-clock and current/historical scope controls. Quantity
+provenance distinguishes manual CSVs, owner-declared full replacements, unverified
+legacy overrides and historical snapshots. Unknown CSV capture dates remain
+unknown. Cached visible Steam observations are never added to portfolio holdings.
+
 ## Forecast diagnostics (#55)
 
 The forecasts view plots actual/predicted fixed-basket indices and common-window

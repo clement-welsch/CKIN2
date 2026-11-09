@@ -1,9 +1,12 @@
 """Read-only global values, comparable fixed-cohort indices and contributions."""
 
+from pathlib import Path
+
 import pandas as pd
 
 from global_snapshots import COLUMNS, build_snapshot, validate_snapshots, value_snapshots
 from portfolio_data import CATEGORIES, ROOT, load_holdings, load_prices, validate_holdings, validate_prices
+from portfolio_selection import analysis_date, quantity_provenance
 
 INDEX_COLUMNS = ["date", "category", "index_100", "covered_items", "cohort_items", "base_date", "oldest_price_age_days"]
 
@@ -92,9 +95,10 @@ HOLDING_KEYS = ["item_id", "category", "item_name"]
 
 
 def analyze(root=ROOT, now=None, max_age_days=45):
+    root = Path(root)
     holdings, imported = load_holdings(root)
     prices = load_prices(root, holdings)
-    now = pd.Timestamp.now() if now is None else pd.Timestamp(now)
+    now = analysis_date(now)
     # Never use future rows even if files contain them.
     prices = prices.loc[prices.date.le(now)].copy()
     current_detail, current = value_snapshots(build_snapshot(holdings, imported, now), prices)
@@ -116,4 +120,5 @@ def analyze(root=ROOT, now=None, max_age_days=45):
     indices, diagnostic = market_indices(holdings, prices, max_age_days)
     return dict(holdings=holdings, prices=prices, current_detail=current_detail, current=current,
                 history=history, history_detail=history_detail, historical=historical,
-                indices=indices, diagnostic=diagnostic, contributions=explain_changes(history, prices))
+                indices=indices, diagnostic=diagnostic, contributions=explain_changes(history, prices),
+                provenance=quantity_provenance(root), data_root=str(root.resolve()), as_of=now)
