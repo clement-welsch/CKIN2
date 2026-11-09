@@ -4,6 +4,7 @@ import argparse
 from hashlib import sha256
 import json
 import os
+import re
 from pathlib import Path
 import tempfile
 
@@ -41,31 +42,40 @@ def atomic_json(value, path):
 
 def parse_export(export):
     """Require a complete, cursor-linked app 730/context 2 local page chain."""
-    if not isinstance(export, dict) or export.get("schema") != 1 or export.get("complete") is not True:
+    if not isinstance(export, dict) or type(export.get("schema")) is not int or export.get("schema") != 1 or export.get("complete") is not True:
         raise ValueError("Only explicitly complete exports can replace inventory")
-    timestamp(export["collected_at"])
-    if not isinstance(export.get("account_id"), str) or not export["account_id"].strip():
+    if pd.isna(timestamp(export.get("collected_at"))):
+        raise ValueError("Missing export timestamp")
+    if not isinstance(export.get("account_id"), str) or not export["account_id"].strip() or export["account_id"] != export["account_id"].strip():
         raise ValueError("Export requires an account_id; do not mix accounts")
     pages = export.get("pages")
     if not isinstance(pages, list) or not pages:
         raise ValueError("Missing inventory pages")
     assets, descriptions = {}, {}
     cursor = None
+    cursors = set()
+    def identifier(value):
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9]+", value):
+            raise ValueError("Expected explicit numeric Steam identity fields")
+        return value
     for index, page in enumerate(pages):
-        if page.get("success") != 1 or page.get("start_assetid") != cursor:
+        if not isinstance(page, dict) or type(page.get("success")) is not int or page.get("success") != 1 or page.get("start_assetid") != cursor:
             raise ValueError("Failed or discontinuous inventory page")
         more = page.get("more_items")
         if type(more) is not int or more not in (0, 1) or bool(more) != (index < len(pages)-1):
             raise ValueError("Incomplete pagination")
         cursor = page.get("last_assetid") if more else None
-        if more and (not isinstance(cursor, str) or not cursor):
-            raise ValueError("Missing next page cursor")
+        if more:
+            identifier(cursor)
+            if cursor in cursors:
+                raise ValueError("Repeated next page cursor")
+            cursors.add(cursor)
         if not isinstance(page.get("assets"), list) or not isinstance(page.get("descriptions"), list):
             raise ValueError("Missing assets/descriptions, even for an empty inventory")
         for item in page["descriptions"]:
-            if str(item.get("appid")) != "730":
+            if not isinstance(item, dict) or str(item.get("appid")) != "730":
                 raise ValueError("Expected CS2 descriptions")
-            key = (str(item.get("classid")), str(item.get("instanceid")))
+            key = (identifier(item.get("classid")), identifier(item.get("instanceid")))
             name = item.get("market_hash_name")
             if not isinstance(name, str) or not name.strip() or name != name.strip():
                 raise ValueError("Missing exact market name")
@@ -73,16 +83,14 @@ def parse_export(export):
                 raise ValueError("Conflicting asset descriptions")
             descriptions[key] = name
         for asset in page["assets"]:
-            if str(asset.get("appid")) != "730" or str(asset.get("contextid")) != "2":
+            if not isinstance(asset, dict) or str(asset.get("appid")) != "730" or str(asset.get("contextid")) != "2":
                 raise ValueError("Expected CS2 context 2 assets")
-            asset_id = asset.get("assetid")
-            if not isinstance(asset_id, str) or not asset_id.isdigit():
-                raise ValueError("Invalid asset ID")
-            amount = asset.get("amount")
-            if not isinstance(amount, str) or not amount.isdigit() or int(amount) <= 0:
+            asset_id = identifier(asset.get("assetid"))
+            amount = identifier(asset.get("amount"))
+            if int(amount) <= 0:
                 raise ValueError("Invalid Steam asset amount")
-            normalized = dict(asset_id=asset_id, classid=str(asset.get("classid")),
-                              instanceid=str(asset.get("instanceid")), quantity=int(amount))
+            normalized = dict(asset_id=asset_id, classid=identifier(asset.get("classid")),
+                              instanceid=identifier(asset.get("instanceid")), quantity=int(amount))
             if asset_id in assets and assets[asset_id] != normalized:
                 raise ValueError("Conflicting duplicate asset")
             assets[asset_id] = normalized

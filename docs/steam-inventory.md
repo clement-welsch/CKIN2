@@ -43,6 +43,11 @@ CSV quantities has no effect while the override is active. `school` never
 writes. A complete import covers all six supported categories; unsupported Steam
 objects must be resolved deliberately rather than silently discarded.
 
+Malformed exports are rejected before preview: class/instance/asset identifiers
+must be explicit ASCII digit strings, and pagination cursors may not cycle.
+Two missing class IDs cannot match each other as a fabricated `"None"` identity.
+Malformed page records and boolean success flags are rejected explicitly.
+
 ## Explicit multi-account selection
 
 To preview two or more owned accounts together, create a local envelope:
