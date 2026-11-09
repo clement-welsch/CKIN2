@@ -12,6 +12,24 @@ the journal.
 
 ## 2026-11-09 - Steam export identity validation (in review)
 
+### Coverage correction - in review
+
+Branch: `codex/steam-inventory-coverage`. Relates to #38.
+
+- Fully paginated public/legacy exports now default to visible observations,
+  saved separately without changing holdings or imported-category coverage.
+- An explicit full-portfolio owner declaration is required for replacement;
+  public sources and mixed coverage selections cannot claim that scope.
+- Two weekly-drop accounts still feed one portfolio. Captures never accumulate
+  cached account quantities or infer acquisitions, transfers or storage contents.
+- Existing overrides stay readable/restorable, with unverified legacy coverage
+  exposed in previews. Already lost quantities require source/backup review.
+- Sixteen targeted synthetic import tests passed, including missing/stored items,
+  empty public views, transfers, unknown quantities, scope/token guards, separate
+  persistence, corrected catalog mappings, idempotence, restore, write failure
+  and the read-only school CLI. All 187 tests and whitespace checks passed.
+  No live Steam access or personal data writes; remote CI follows publication.
+
 Branch: `codex/steam-export-validation`. Relates to #38.
 
 - Rejected missing/malformed class and instance IDs before matching. Previously

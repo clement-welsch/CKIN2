@@ -3,6 +3,12 @@
 Development history, dated feature summaries, validation notes and pull request
 links are recorded in the [development journal](docs/journal.md).
 
+[Steam inventory import](docs/steam-inventory.md) distinguishes public visible
+observations from explicitly complete owner exports. Public captures preserve
+known portfolio quantities, including objects absent because of storage units.
+Multiple Steam accounts feed one consolidated portfolio; observed account totals
+are never added to the existing holdings automatically.
+
 The [Steam history feasibility study](docs/steam-history-study.md) provides an
 offline synthetic analyzer and a home-network validation protocol. Live access
 and backfill feasibility remain unverified; it does not import historical prices.

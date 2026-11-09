@@ -1,4 +1,4 @@
-"""Preview complete local Steam exports; apply reviewed quantities atomically."""
+"""Observe visible Steam inventories or replace explicitly complete owner holdings."""
 
 import argparse
 from hashlib import sha256
@@ -43,7 +43,7 @@ def atomic_json(value, path):
 def parse_export(export):
     """Require a complete, cursor-linked app 730/context 2 local page chain."""
     if not isinstance(export, dict) or type(export.get("schema")) is not int or export.get("schema") != 1 or export.get("complete") is not True:
-        raise ValueError("Only explicitly complete exports can replace inventory")
+        raise ValueError("Expected a fully paginated export; complete does not certify portfolio coverage")
     if pd.isna(timestamp(export.get("collected_at"))):
         raise ValueError("Missing export timestamp")
     if not isinstance(export.get("account_id"), str) or not export["account_id"].strip() or export["account_id"] != export["account_id"].strip():
@@ -107,13 +107,22 @@ def state(root):
     holdings, imported = load_holdings(root)
     # Quantities unknown in legacy holdings must remain JSON null, not NaN.
     records = json.loads(holdings.sort_values("item_id").to_json(orient="records"))
-    return dict(holdings=records, imported=sorted(imported))
+    path = Path(root) / 'data/processed/steam_inventory_override.json'
+    if path.exists():
+        override = json.loads(path.read_text(encoding='utf-8'))
+        basis = ('owner_declared_full_portfolio' if override.get('inventory_scope') == 'full_portfolio'
+                 else 'legacy_override_coverage_unverified')
+    else:
+        basis = 'manual_csv'
+    return dict(holdings=records, imported=sorted(imported), portfolio_basis=basis)
 
 
 def export_selection(export):
     """Keep asset deduplication scoped to each explicitly selected account."""
     if not isinstance(export, dict):
         raise ValueError("Expected an inventory export object")
+    if type(export.get('schema')) is not int:
+        raise ValueError('Expected integer export schema')
     if export.get("schema") == 1:
         sources = [export]
     elif export.get("schema") == 2 and export.get("complete") is True:
@@ -135,26 +144,81 @@ def export_selection(export):
     return pd.concat(frames, ignore_index=True), ids, dates, scope
 
 
+def coverage(export):
+    """Missing legacy metadata never certifies full-portfolio coverage."""
+    sources = [export] if export['schema'] == 1 else export['accounts']
+    scopes, provenance = set(), {}
+    for source in sources:
+        scope = source.get('inventory_scope', 'visible')
+        origin = source.get('source', 'steam_community')
+        if scope not in ('visible', 'full_portfolio') or origin not in ('steam_community', 'owner_export'):
+            raise ValueError('Unknown inventory scope or source')
+        if scope == 'full_portfolio' and origin != 'owner_export':
+            raise ValueError('Full portfolio requires an explicit owner_export including storage contents')
+        scopes.add(scope)
+        provenance[source['account_id']] = origin
+    if len(scopes) != 1:
+        raise ValueError('Do not mix visible and full-portfolio account exports')
+    return scopes.pop(), provenance
+
+
+def observation_differences(old, observed):
+    """Compare a visible subset with global holdings without inferring transactions."""
+    frame = old.merge(observed, on=HOLDINGS[:3], how='outer', suffixes=('_known', '_visible'))
+    rows, known_ids = [], set(old.item_id)
+    for row in frame.itertuples(index=False):
+        known, visible = row.quantity_known, row.quantity_visible
+        if pd.isna(visible):
+            status = 'not_observed'
+        elif pd.isna(known):
+            status = 'known_total_unknown' if row.item_id in known_ids else 'newly_observed'
+        elif visible < known:
+            status = 'visible_below_known'
+        elif visible > known:
+            status = 'visible_exceeds_known'
+        else:
+            status = 'visible_matches_known'
+        rows.append(dict(item_id=row.item_id, category=row.category, item_name=row.item_name,
+                         quantity_known=None if pd.isna(known) else int(known),
+                         quantity_visible=None if pd.isna(visible) else int(visible), status=status))
+    return rows
+
+
 def preview(export, catalog, root=ROOT):
-    assets, account_ids, account_dates, scope = export_selection(export)
+    assets, account_ids, account_dates, account_scope = export_selection(export)
+    inventory_scope, account_sources = coverage(export)
     validate_catalog(catalog, catalog.assign(quantity=0)[HOLDINGS])
     before = state(root)
     mapping = catalog[["market_hash_name", *HOLDINGS[:3]]]
     matched = assets.merge(mapping, on="market_hash_name", how="left", validate="many_to_one")
     unresolved = sorted(set(matched.loc[matched.item_id.isna(), "market_hash_name"]))
     known = matched.loc[matched.item_id.notna()]
-    holdings = known.groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
-    validate_holdings(holdings)
+    observed = known.groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
+    validate_holdings(observed)
     old = pd.DataFrame(before["holdings"], columns=HOLDINGS)
+    # Public inventories exclude storage contents. They cannot replace or add to
+    # global holdings: an apparent addition may be a transfer from another account.
+    holdings = observed if inventory_scope == 'full_portfolio' else old.copy()
     changes = old.merge(holdings, on=HOLDINGS[:3], how="outer", suffixes=("_before", "_after"))
     # Only absent rows mean zero; existing unknown quantities stay unknown.
     changes.loc[~changes.item_id.isin(old.item_id), "quantity_before"] = 0
     changes.loc[~changes.item_id.isin(holdings.item_id), "quantity_after"] = 0
     changes["delta"] = changes.quantity_after - changes.quantity_before
-    plan = dict(schema=1, source_hash=digest(export), collected_at=max(account_dates.values(), key=timestamp), account_id=scope,
+    plan = dict(schema=1, source_hash=digest(export), collected_at=max(account_dates.values(), key=timestamp), account_id=account_scope,
                 account_ids=account_ids, account_collected_at=account_dates,
+                inventory_scope=inventory_scope, account_sources=account_sources,
+                action='replace_portfolio' if inventory_scope == 'full_portfolio' else 'record_visible_observation',
+                coverage_note=('Owner-declared full portfolio including storage; this is not independently verified.'
+                               if inventory_scope == 'full_portfolio' else
+                               'Visible items in the selected accounts only; storage and omitted accounts are not covered. '
+                               'Missing items are not sales. Global quantities stay unchanged, including newly visible items. '
+                               'Account captures may span transfers; no transfer or storage location is inferred.'),
                 before_hash=digest(before), holdings=json.loads(holdings.to_json(orient="records")),
-                imported=list(CATEGORIES), unresolved=unresolved,
+                portfolio_basis=before['portfolio_basis'],
+                imported=list(CATEGORIES) if inventory_scope == 'full_portfolio' else before['imported'],
+                observed_holdings=json.loads(observed.to_json(orient='records')),
+                observation_differences=observation_differences(old, observed) if inventory_scope == 'visible' else [],
+                unresolved=unresolved,
                 assets=json.loads(matched.to_json(orient="records")),
                 changes=json.loads(changes.to_json(orient="records")))
     accounts = []
@@ -163,6 +227,7 @@ def preview(export, catalog, root=ROOT):
         resolved = selected.loc[selected.item_id.notna()]
         quantities = resolved.groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
         accounts.append(dict(account_id=account, collected_at=account_dates[account],
+                             inventory_scope=inventory_scope, source=account_sources[account],
                              asset_count=len(selected), total_quantity=int(selected.quantity.sum()),
                              matched_quantity=int(resolved.quantity.sum()),
                              unresolved_quantity=int(selected.loc[selected.item_id.isna(), 'quantity'].sum()),
@@ -174,12 +239,14 @@ def preview(export, catalog, root=ROOT):
 
 
 def apply(export, catalog, token, root=ROOT, environment="school"):
-    """Recompute the displayed plan, rejecting stale inputs or incomplete matches."""
+    """Persist a reviewed observation or explicitly complete owner replacement."""
     if environment != "home":
         raise ValueError("school is read-only")
     root = Path(root)
     with collection_lock(root):
         plan = preview(export, catalog, root)
+        if plan['inventory_scope'] == 'visible':
+            return _record_observation(plan, token, root)
         path = root / "data/processed/steam_inventory_override.json"
         previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
         # Same source and current quantities: exact repetition is a no-op.
@@ -201,11 +268,44 @@ def apply(export, catalog, token, root=ROOT, environment="school"):
         backup_path = root / "data/imports" / f"{backup_key}.json"
         atomic_json(backup, backup_path)
         value = dict(schema=1, holdings=plan["holdings"], imported=plan["imported"],
+                     inventory_scope=plan['inventory_scope'], account_sources=plan['account_sources'],
                      source_hash=plan["source_hash"], collected_at=plan["collected_at"],
                      account_id=plan["account_id"], account_ids=plan["account_ids"],
                      account_collected_at=plan["account_collected_at"], backup_id=backup_key)
         atomic_json(value, path)
         return value
+
+
+def _record_observation(plan, token, root):
+    """Persist one reviewed capture separately; never mutate portfolio overrides.
+
+    Called under the import lock. Earlier captures are retained in the audit;
+    account subsets replace the visible selection, never sum cached accounts.
+    """
+    path = root / 'data/processed/steam_inventory_visible.json'
+    previous = json.loads(path.read_text(encoding='utf-8')) if path.exists() else None
+    value = dict(schema=1, inventory_scope='visible', source_hash=plan['source_hash'],
+                 collected_at=plan['collected_at'], account_ids=plan['account_ids'],
+                 account_collected_at=plan['account_collected_at'],
+                 account_sources=plan['account_sources'], accounts=plan['accounts'],
+                 observed_holdings=plan['observed_holdings'], unresolved=plan['unresolved'])
+    # Same source can resolve differently after a reviewed catalog correction.
+    if previous and all(previous.get(key) == item for key, item in value.items()):
+        return previous
+    if not isinstance(token, str) or token != plan['review_token']:
+        raise ValueError('Review token does not match current preview; preview again')
+    # Keep the most recent capture date even for accounts omitted this time.
+    latest_dates = dict(previous.get('latest_account_collected_at', previous['account_collected_at'])) if previous else {}
+    if any(account in latest_dates and timestamp(date) < timestamp(latest_dates[account])
+           for account, date in plan['account_collected_at'].items()):
+        raise ValueError('Refusing an older visible inventory export for an account')
+    latest_dates.update(plan['account_collected_at'])
+    audit = dict(schema=1, previous_observation=previous, applied=plan)
+    key = digest(audit)
+    atomic_json(audit, root / 'data/imports' / f'{key}.json')
+    value.update(latest_account_collected_at=latest_dates, audit_id=key)
+    atomic_json(value, path)
+    return value
 
 
 def restore(root=ROOT, environment="school"):
