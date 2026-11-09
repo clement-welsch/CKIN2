@@ -153,7 +153,7 @@ class NotebookDataTests(unittest.TestCase):
     def test_context_rejects_ambiguous_dates_and_keeps_explicit_root(self):
         with patch.dict(os.environ, {'CKIN2_DATA_ROOT': '/tmp/ckin2-synthetic', 'CKIN2_AS_OF': '2026-01-01'}):
             root, stamp = notebook_context()
-            self.assertEqual(root, Path('/tmp/ckin2-synthetic'))
+            self.assertEqual(root, Path('/tmp/ckin2-synthetic').resolve())
             self.assertEqual(stamp, pd.Timestamp('2026-01-01'))
         for stamp in ('invalid', '2026-01-01T00:00:00Z'):
             with patch.dict(os.environ, {'CKIN2_AS_OF': stamp}), self.assertRaises(ValueError):
