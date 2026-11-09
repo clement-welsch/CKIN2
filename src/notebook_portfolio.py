@@ -27,6 +27,8 @@ def portfolio_report(root=ROOT, *, category="all", item_id="", start=None, end=N
                                         "source": "price_source"}))
     provenance_rows["item_id"] = provenance_rows.item_id.astype(object)
     detail = data["detail"].copy()
+    # pandas 3 infers an all-missing category-marker identity as float64.
+    detail["item_id"] = detail.item_id.astype(object)
     detail["price_date"] = pd.to_datetime(detail.price_date)
     data["current_detail"] = detail.merge(provenance_rows, on=["item_id", "price_date"],
                                          how="left", validate="many_to_one")
