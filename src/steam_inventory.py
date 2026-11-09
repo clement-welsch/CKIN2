@@ -157,6 +157,18 @@ def preview(export, catalog, root=ROOT):
                 imported=list(CATEGORIES), unresolved=unresolved,
                 assets=json.loads(matched.to_json(orient="records")),
                 changes=json.loads(changes.to_json(orient="records")))
+    accounts = []
+    for account in account_ids:
+        selected = matched.loc[matched.account_id.eq(account)]
+        resolved = selected.loc[selected.item_id.notna()]
+        quantities = resolved.groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
+        accounts.append(dict(account_id=account, collected_at=account_dates[account],
+                             asset_count=len(selected), total_quantity=int(selected.quantity.sum()),
+                             matched_quantity=int(resolved.quantity.sum()),
+                             unresolved_quantity=int(selected.loc[selected.item_id.isna(), 'quantity'].sum()),
+                             unresolved=sorted(set(selected.loc[selected.item_id.isna(), 'market_hash_name'])),
+                             holdings=json.loads(quantities.to_json(orient='records'))))
+    plan['accounts'] = accounts
     plan["review_token"] = digest(plan)
     return plan
 

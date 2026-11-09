@@ -22,6 +22,12 @@ Branch: `codex/steam-export-validation`. Relates to #38.
 
 ## 2026-11-09 - Explicit multi-account inventory preview (in review)
 
+Follow-up: `codex/steam-account-breakdown` (#38, review pending) adds per-account
+matched/unresolved quantities and item holdings to the signed preview, retaining
+empty accounts and account-scoped deduplication. Seven focused import tests and
+the combined four-feature suite of 178 tests passed on synthetic data.
+No live Steam access or personal data writes were performed.
+
 Branch: `codex/steam-inventory-multi-account`. Relates to #38.
 
 - Added a schema-2 selection of complete schema-1 account exports, retaining
