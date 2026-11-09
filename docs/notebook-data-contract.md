@@ -1,10 +1,14 @@
-# Données communes aux notebooks et au dashboard (#78)
+# Sélections filtrées depuis un notebook (#78)
 
-Les rapports de patrimoine des notebooks `cases`, `skins`, `souvenirs`,
-`others`, `global` et `prediction` passent par `notebook_portfolio.portfolio_report`.
-Ce point d’entrée appelle la sélection du dashboard : mêmes identités exactes,
-quantités, observations de prix, valeurs et couvertures. Les acquisitions restent
-des références séparées ; elles ne deviennent ni prix de marché ni achats confirmés.
+Les notebooks versionnés utilisent désormais le contrat partagé livré par #89,
+décrit dans [le workflow des notebooks](category-notebooks.md#shared-portfolio-contract-78).
+Cette résolution conserve ces notebooks, leur provenance, leurs prix récents,
+leurs références d’acquisition séparées et leurs quantités historiques.
+
+`notebook_portfolio.portfolio_report` reste un adaptateur facultatif pour reproduire
+une sélection avancée du dashboard dans une cellule personnelle : catégorie,
+identité exacte, début et fin de période. Il ne déclenche pas un deuxième rapport
+automatique dans les notebooks versionnés.
 
 Depuis la racine du dépôt ou `notebook/`, définir facultativement
 `CKIN2_DATA_ROOT` (racine contenant `data/processed/`) et `CKIN2_AS_OF`
@@ -34,27 +38,17 @@ snapshot global disponible avant cette fin. L’historique conserve les quantit�
 de chaque snapshot et exclut les prix futurs. Aucun inventaire actuel n’est
 projeté dans le passé.
 
-## Périmètres d’analyse
+## Périmètres et validation
 
-- `global` : patrimoine des six catégories ; mêmes tableaux de valeur et
-  d’historique que le dashboard sans filtre.
-- `skins`, `souvenirs` : catégorie correspondante ; `others` présente séparément
-  stickers, agents et charms, comme les vues catégories du dashboard.
-- `prediction` : expérience du dashboard Prévisions, mêmes paramètres par défaut.
-  Les archives restent évaluées séparément ; aucun modèle n’est réécrit.
-- `cases` : rapport partagé de la catégorie `case` en tête. L’exploration ensuite
-  conservée porte sur les prix de caisses, les quantités actuelles connues et
-  l’ancien historique de snapshots de caisses. Sa cohorte de prix et ses anciens
-  snapshots ont un périmètre distinct de l’indice et des snapshots globaux.
-  Les quantités inconnues restent dans le rapport partagé et sont exclues de
-  cette exploration ancienne. Les coûts FIFO sont consultables dans les fiches
-  objets du dashboard ; aucune référence d’acquisition n’est assimilée à un coût.
-- `community` : corpus de recherche indépendant, inchangé.
+Les notebooks de catégorie et global conservent les calculs partagés de #89.
+`others` sélectionne stickers, agents et charms ; `prediction` conserve son
+expérience et son chargeur de prix compatibles avec les archives. La recherche
+communautaire a un univers indépendant du patrimoine. Le notebook caisses utilise
+les snapshots globaux enregistrés, sans fusion implicite avec l’ancien historique
+de caisses.
 
-## Validation synthétique
-
-`test_notebook_portfolio.py` exécute les cellules des six notebooks et compare
-leurs valeurs, détails et historiques au dashboard sur des données complètes,
-partielles, absentes et remplacées par le propriétaire. Les fichiers sont
-comparés avant/après lecture. Un test de sélection historique vérifie les
-quantités du snapshot et l’exclusion des observations futures.
+`test_notebook_portfolio.py` exécute les six notebooks sur des jeux synthétiques
+complets, partiels, absents, avec quantités inconnues et après remplacement
+propriétaire. Il vérifie leurs résultats et l’adaptateur filtré contre le dashboard,
+y compris prévisions, références séparées et sélection historique. Les fichiers
+sont comparés avant/après lecture ; aucune sortie privée n’est versionnée.

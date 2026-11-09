@@ -40,10 +40,31 @@ class NotebookPortfolioTests(unittest.TestCase):
                 with patch.dict('os.environ', {'CKIN2_AS_OF': '2023-04-01'}):
                     for name, category in [('cases', 'case'), ('skins', 'skin'), ('souvenirs', 'souvenir'), ('others', 'all'), ('global', 'all'), ('prediction', 'all')]:
                         scope, _ = run_notebook(name + '_book.ipynb', root)
-                        result = scope['result'] if name == 'global' else scope['report']
                         expected = view(root, category=category, now='2023-04-01', components='forecasts' if name == 'prediction' else 'overview')
+                        # #89 already migrated authored notebooks to notebook_data.
+                        # Preserve that implementation and check the optional #87
+                        # filter adapter independently rather than executing two
+                        # parallel reports inside every notebook.
+                        adapter = portfolio_report(root, category=category, now='2023-04-01',
+                                                   components='forecasts' if name == 'prediction' else 'overview')
                         for key in ('current', 'detail', 'historical'):
-                            pd.testing.assert_frame_equal(result[key], expected[key])
+                            pd.testing.assert_frame_equal(adapter[key], expected[key])
+                        if name == 'global':
+                            pd.testing.assert_frame_equal(scope['result']['current'], expected['current'])
+                            pd.testing.assert_frame_equal(scope['result']['historical'], expected['historical'])
+                        elif name == 'prediction':
+                            for key in ('future', 'backtests', 'scores', 'monthly'):
+                                pd.testing.assert_frame_equal(scope['prediction'][key], expected['prediction'][key])
+                        else:
+                            result = scope['notebook_result'] if name == 'cases' else scope['result']
+                            selected = ['sticker', 'agent', 'charm'] if name == 'others' else [category]
+                            actual = result['summary'].loc[result['summary'].category.isin(selected)].reset_index(drop=True)
+                            wanted = expected['current'].loc[expected['current'].category.isin(selected)].reset_index(drop=True)
+                            pd.testing.assert_frame_equal(actual, wanted)
+                            actual_rows = result['detail'].loc[result['detail'].category.isin(selected)].reset_index(drop=True)
+                            wanted_rows = expected['detail'].loc[expected['detail'].category.isin(selected)].reset_index(drop=True)
+                            # Excluded-category markers can promote integer prices to floats.
+                            pd.testing.assert_frame_equal(actual_rows, wanted_rows, check_dtype=False)
                 self.assertEqual(before, {p: p.read_bytes() for p in root.rglob('*') if p.is_file()})
 
     def test_acquisition_references_do_not_value_the_portfolio(self):
