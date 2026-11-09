@@ -33,6 +33,19 @@ Tables scroll horizontally on narrow screens. Charts resize and preserve gaps;
 missing full totals are never connected across incomplete snapshots. The
 dashboard is French; repository interfaces/documentation remain English.
 
+## Forecast diagnostics (#55)
+
+The forecasts view plots actual/predicted fixed-basket indices and common-window
+MAE/RMSE, separately for baseline and model samples. It displays origin, target,
+training end/count, monthly age and shared insufficient-history diagnostics.
+The horizon is one month; no confidence interval is inferred. Period start
+filters evaluated targets after past-only model fitting, including metric
+recalculation on the visible targets. Category filtering applies to every table.
+Archive metrics remain grouped by issued/retrospective kind, frozen basket,
+revision, code and settings. Unemitted records are hidden at historical cutoffs;
+pending/unavailable targets never contribute to scores. Item filters hide
+category archives and their metrics. Viewing never issues or saves a forecast.
+
 ## Performance details (#54)
 
 The performance view reuses `explain_changes` for item-level price/quantity

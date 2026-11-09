@@ -16,7 +16,8 @@ from forecast_archive import evaluate, load_archive_prices
 from global_analysis import analyze, explain_changes, market_indices
 from global_snapshots import COLUMNS, build_snapshot, value_snapshots
 from portfolio_data import CATEGORIES, ROOT, _parse_dates
-from prediction import experiment
+from prediction import experiment, scores
+from dashboard_forecasts import forecast_figures
 from transactions import COLUMNS as TRANSACTIONS, validate_transactions
 from source_attribution import sources_page
 from dashboard_categories import LABELS, category_data, category_figures, value_distribution
@@ -111,18 +112,31 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
         pnl_message = "FIFO depuis l'inventaire initial jusqu'à la date choisie ; coûts inconnus = N/A, frais de vente futurs non estimés."
     prediction = {key: pd.DataFrame(columns=["category"]) for key in ("audit", "future", "scores")}
     archive = pd.DataFrame(columns=["category"])
+    archive_metrics = pd.DataFrame(columns=["category"])
     if components in (None, "forecasts"):
         prediction = experiment(cohort, data["prices"], cutoff)
-        archive, metrics = evaluate(root / "data/processed/forecast_archive", load_archive_prices(root), cutoff,
+        selected = [*categories, "global"] if category == "all" else list(categories)
+        for key in ("audit", "future", "backtests", "monthly"):
+            prediction[key] = prediction[key].loc[prediction[key].category.isin(selected)]
+        if start is not None:
+            prediction["backtests"] = prediction["backtests"].loc[prediction["backtests"].target_date.ge(start)]
+            prediction["monthly"] = prediction["monthly"].loc[prediction["monthly"].date.ge(start)]
+        prediction["scores"] = scores(prediction["backtests"])
+        archive, archive_metrics = evaluate(root / "data/processed/forecast_archive", load_archive_prices(root), cutoff,
                                     target_start=start, target_end=cutoff)
+        # A forecast not yet emitted at this cutoff cannot appear in a past view.
+        archive = archive.loc[pd.to_datetime(archive.emitted_at).le(cutoff)]
+        archive_metrics = archive_metrics.loc[archive_metrics.category.isin(selected)]
     archive = archive.loc[archive.category.isin([*categories, "global"] if category == "all" else categories)]
     if item_id:
         archive = archive.iloc[:0]  # Frozen category baskets cannot be relabeled as item forecasts.
+        archive_metrics = archive_metrics.iloc[:0]
     return dict(now=now, cutoff=cutoff, historical_mode=historical_mode, categories=categories,
                 registry=registry, detail=detail, current=current, historical=historical,
                 indices=indices, diagnostic=diagnostic, transactions=transactions,
                 pnl=pnl, sales=sales, pnl_message=pnl_message, contributions=contributions,
-                prediction=prediction, archive=archive, prices=data["prices"], selected_item_id=item_id)
+                prediction=prediction, archive=archive, archive_metrics=archive_metrics,
+                prices=data["prices"], selected_item_id=item_id)
 
 
 def table(frame):
@@ -199,6 +213,17 @@ def render(root=ROOT, params=None, now=None):
     forecast_body = section("Prévisions expérimentales", '<p>Prévisions de prix de la cohorte sélectionnée, sans signal d’achat/vente ni intervalle de confiance arbitraire. La période de début filtre les graphiques ; l’entraînement utilise tout le passé disponible avant la fin.</p>' +
                     table(prediction["audit"].loc[prediction["audit"].category.isin([*data["categories"], "global"])]) + table(prediction["future"]) + table(prediction["scores"]))
     forecast_body += section("Prévisions archivées", '<p>Paniers gelés originaux ; indisponibles sous un filtre objet. Les prévisions rétrospectives restent identifiées.</p>' + table(data["archive"]))
+    if page == "forecasts":
+        forecast_body += section("Validation chronologique", '<p>Cible : indice de prix à panier fixe, horizon un mois. '
+                                 'L’expérience recalcule les origines passées ; elle ne constitue pas un historique de prévisions émises. '
+                                 'Les modèles sont comparés sur les mêmes fenêtres par échantillon ; les fenêtres sans Ridge restent dans baseline_common. '
+                                 'La date de début filtre les cibles affichées, sans supprimer les observations antérieures nécessaires à l’entraînement.</p>' +
+                                 forecast_figures(prediction) + table(prediction["backtests"]) +
+                                 '<h3>Disponibilité mensuelle et fraîcheur</h3>' + table(prediction["monthly"]) +
+                                 '<p>' + escaped(prediction["diagnostic"]) + '</p>')
+        forecast_body += section("Erreurs des prévisions archivées", '<p>Évaluation séparée par nature (issued/retrospective), panier, révision, code et paramètres d’origine. '
+                                 'Les cibles non réalisées ou sans prix suffisamment frais ne contribuent pas aux erreurs. '
+                                 'Sous un filtre objet, aucune prévision de catégorie n’est réétiquetée.</p>' + table(data["archive_metrics"]))
     body = {"overview": overview + item_body, "item": item_body,
             "performance": performance_body, "forecasts": forecast_body,
             "community": section("Recherche communautaire", "<p>Le notebook community_book et son prototype hors ligne sont disponibles. Leur intégration détaillée dans cette vue est suivie dans #56 ; aucun résultat validé n’est supposé.</p>")}.get(page, "")

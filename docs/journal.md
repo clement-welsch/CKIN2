@@ -10,6 +10,23 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Dashboard forecast diagnostics (local review)
+
+Branch: `codex/dashboard-forecasts`. Tracking: #55.
+
+Review: [#65](https://github.com/clement-welsch/CKIN2/pull/65), stacked on
+[#64](https://github.com/clement-welsch/CKIN2/pull/64) (#54) to resolve shared
+dashboard fields before integration. Final combined suite: **157 tests passed**;
+whitespace checks passed. Visual browser checks remain unperformed.
+
+- Added predicted/actual plots and common-window MAE/RMSE using shared past-only
+  experiments. Period start filters targets after training, then recomputes scores.
+- Exposed monthly freshness, training details and immutable archive metrics,
+  preserving original grouping and hiding category archives under item filters.
+- Validation: two focused synthetic tests passed for shared-calculation parity,
+  empty/short history, zero targets, period/category/item filters, archive metrics,
+  future-data exclusion and unchanged files. No Steam call or forecast issuance.
+
 ## 2026-11-09 - Dashboard performance details (local review)
 
 Branch: `codex/dashboard-performance`. Tracking: #54.
