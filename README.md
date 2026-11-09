@@ -3,6 +3,10 @@
 Development history, dated feature summaries, validation notes and pull request
 links are recorded in the [development journal](docs/journal.md).
 
+The [Steam history feasibility study](docs/steam-history-study.md) provides an
+offline synthetic analyzer and a home-network validation protocol. Live access
+and backfill feasibility remain unverified; it does not import historical prices.
+
 For a single command that validates data, updates market prices, saves a global
 snapshot and prints the portfolio report, see the
 [one-command update workflow](docs/one-command-update.md).

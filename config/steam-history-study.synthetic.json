@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "market_hash_name": "Example Case",
+  "listing_url": "https://steamcommunity.com/market/listings/730/Example%20Case",
+  "response_url": "https://steamcommunity.com/market/pricehistory/?appid=730&currency=3&market_hash_name=Example%20Case",
+  "retrieved_at": "2026-11-09T12:00:00+01:00",
+  "currency": "EUR",
+  "response": {
+    "success": true,
+    "prices": [
+      ["Nov 01 2026 01: +0", 1.25, "1,234"],
+      ["Nov 03 2026 01: +0", 0, "0"]
+    ]
+  }
+}
