@@ -7,6 +7,8 @@ import pandas as pd
 from global_snapshots import COLUMNS, build_snapshot, validate_snapshots, value_snapshots
 from portfolio_data import CATEGORIES, ROOT, load_holdings, load_prices, validate_holdings, validate_prices
 from portfolio_selection import analysis_date, quantity_provenance
+from data_diagnostics import read_dataset, unavailable_valuation
+from portfolio_data import HOLDINGS, PRICES
 
 INDEX_COLUMNS = ["date", "category", "index_100", "covered_items", "cohort_items", "base_date", "oldest_price_age_days"]
 
@@ -94,16 +96,19 @@ def explain_changes(snapshots, prices):
 HOLDING_KEYS = ["item_id", "category", "item_name"]
 
 
-def analyze(root=ROOT, now=None, max_age_days=45):
+def analyze(root=ROOT, now=None, max_age_days=45, *, strict=True):
     root = Path(root)
-    holdings, imported = load_holdings(root)
-    prices = load_prices(root, holdings)
+    errors = {}
+    holdings, imported = read_dataset(errors, 'holdings', lambda: load_holdings(root),
+                                      (pd.DataFrame(columns=HOLDINGS), set()), strict=strict)
+    prices = read_dataset(errors, 'prices', lambda: load_prices(root, holdings),
+                          validate_prices(pd.DataFrame(columns=PRICES)), strict=strict)
     now = analysis_date(now)
     # Never use future rows even if files contain them.
     prices = prices.loc[prices.date.le(now)].copy()
     current_detail, current = value_snapshots(build_snapshot(holdings, imported, now), prices)
     path = root / "data/processed/global_inventory_history.csv"
-    history = validate_snapshots(pd.read_csv(path)) if path.exists() else pd.DataFrame(columns=COLUMNS)
+    history = read_dataset(errors, 'history', lambda: validate_snapshots(pd.read_csv(path)) if path.exists() else pd.DataFrame(columns=COLUMNS), pd.DataFrame(columns=COLUMNS), strict=strict)
     history = history.loc[history.snapshot_date.le(now)]
     history_detail, historical = value_snapshots(history, prices)
     provenance = (prices.dropna(subset=["unit_price"]).sort_values("date", kind="stable")
@@ -117,8 +122,15 @@ def analyze(root=ROOT, now=None, max_age_days=45):
     history_detail["price_date"] = pd.to_datetime(history_detail.price_date)
     current_detail = current_detail.merge(provenance, on=["item_id", "price_date"], how="left", validate="many_to_one")
     history_detail = history_detail.merge(provenance, on=["item_id", "price_date"], how="left", validate="many_to_one")
+    if 'prices' in errors:
+        current_detail, current = unavailable_valuation(current_detail, current)
+        history_detail, historical = unavailable_valuation(history_detail, historical)
+    provenance_info = read_dataset(errors, 'holdings', lambda: quantity_provenance(root),
+                                   dict(basis='invalid', collected_at=None), strict=strict)
+    if 'holdings' in errors:
+        provenance_info = dict(basis='invalid', collected_at=None)
     indices, diagnostic = market_indices(holdings, prices, max_age_days)
     return dict(holdings=holdings, prices=prices, current_detail=current_detail, current=current,
                 history=history, history_detail=history_detail, historical=historical,
                 indices=indices, diagnostic=diagnostic, contributions=explain_changes(history, prices),
-                provenance=quantity_provenance(root), data_root=str(root.resolve()), as_of=now)
+                provenance=provenance_info, data_root=str(root.resolve()), as_of=now, errors=errors)

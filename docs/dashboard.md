@@ -114,3 +114,40 @@ are 10/25/50/100; out-of-range pages clamp to the last page. Shared snapshot
 valuation computes totals for the entire filtered selection, independent of the
 page. Missing category coverage remains explicit; unknown amounts never become
 zero. Controls and pagination use ordinary keyboard-accessible forms and links.
+
+## Data-quality centre and invalid datasets (#85)
+
+The Quality view shares held-row price/quantity statuses with the landing page
+and inventory. It groups unknown quantities, missing/old/invalid prices,
+unimported categories, unverified legacy replacements and unresolved visible
+Steam mappings. Every diagnostic includes its affected scope, impact and a
+manual correction procedure. It never resets quantities, repairs files or
+collects prices. The landing page links to these diagnostics; its filters fold
+away initially to keep the current summary visible on mobile.
+
+The latest valid-by-schema local scheduled result is selected by its recorded
+end timestamp (UTC comparison), not filename or mtime. Success, partial result,
+failure and no history are distinct. A malformed runtime record makes that
+history unverifiable instead of claiming an earlier success. Future records
+are not displayed at an earlier analysis cutoff. Collector stale counts retain
+the collector's own policy; they are not relabeled as dashboard selection counts.
+Unscheduled commands without persisted run records cannot supply this history.
+
+Dashboard reads isolate rejected datasets: invalid snapshots block historical
+selection but leave current quantities available; invalid archives, metadata,
+corpora, visible captures, transactions or FIFO inputs block their dependent
+components. Rejected portfolio prices never become fallback/zero valuations.
+Missing quantities stay unavailable when inventory validation fails. Explicit
+market observations do not depend on an optional catalog unless legacy others
+price classification requires it. A visible error identifies the rejected dataset
+and links to correction procedures. Core `analyze()` and notebooks remain strict
+by default; the dashboard opts into diagnosed partial reads and retains the
+same underlying validators. No invalid rows are silently accepted or rewritten.
+
+Combined verification: 207 synthetic tests on Linux CPython 3.12.14, dependency
+compatibility and whitespace checks passed. Chromium desktop and 390px mobile
+checks exercised summary, inventory paging/search/filter, exact identity links,
+account selection, quality results and keyboard focus. No page errors, document
+horizontal overflow, external network requests or fixture-byte changes occurred.
+Screenshots contain synthetic data only. Remote CI validates the supported
+Python version on Windows and Linux for the published review branches.

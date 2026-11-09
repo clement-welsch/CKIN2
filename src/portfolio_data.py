@@ -104,7 +104,9 @@ def load_prices(root=ROOT, holdings=None):
     frames = []
     registry = holdings[["item_id", "category", "item_name"]].copy()
     catalog_path = Path(root) / "data/processed/market_catalog.csv"
-    if catalog_path.exists():
+    # Catalog classification is a dependency only for legacy others prices.
+    # Explicit identities in fresh observations do not depend on optional metadata.
+    if catalog_path.exists() and (Path(root) / "data/processed/others_prices.csv").exists():
         catalog = pd.read_csv(catalog_path)
         validate_holdings(catalog.assign(quantity=0)[HOLDINGS])
         registry = pd.concat([catalog[["item_id", "category", "item_name"]], registry], ignore_index=True)
