@@ -45,5 +45,5 @@ def overview(data, params):
         body += '<p>Quantités du dernier snapshot enregistré avant la fin de période. Aucun patrimoine actuel projeté dans le passé.</p>'
     else:
         body += '<p>Le patrimoine connu inclut les quantités conservées localement. Une observation publique visible ne prouve pas le patrimoine complet.</p>'
-    body += '<p>' + link('categories', 'Voir les catégories et leur couverture') + ' · ' + link('item', 'Consulter un objet') + '</p></section>'
+    body += '<p>' + link('inventory', 'Consulter l’inventaire détenu') + ' · ' + link('categories', 'Voir les catégories et leur couverture') + ' · ' + link('item', 'Consulter un objet') + '</p></section>'
     return body

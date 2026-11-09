@@ -103,3 +103,14 @@ Dates, source, unresolved mappings and omitted accounts remain visible. Capture
 skew and transfer risks are explained without inferring a transfer, sale or
 storage location. Future captures are unavailable in historical views; audit
 files are not silently replayed. The page never applies adjustments or collects.
+
+## Held inventory table (#82)
+
+The Inventory view lists positive or unknown owned quantities only, keeping exact
+variant names and exact-identity detail links. Literal case-insensitive search,
+category/object filters, known/unknown quantities and recent/old/missing prices
+combine before stable sorting (missing values last) and pagination. Page sizes
+are 10/25/50/100; out-of-range pages clamp to the last page. Shared snapshot
+valuation computes totals for the entire filtered selection, independent of the
+page. Missing category coverage remains explicit; unknown amounts never become
+zero. Controls and pagination use ordinary keyboard-accessible forms and links.

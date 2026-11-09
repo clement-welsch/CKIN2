@@ -10,6 +10,17 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Interactive held inventory table (in review)
+
+Branch: `codex/dashboard-inventory`. Tracking: #82; stacked on #81.
+Added held/unknown positions, exact-variant detail links, literal search, stable
+sorts, combined quantity/price filters and bounded pagination. Totals use shared
+valuation over the complete filtered selection. Zero positions and catalog-only
+identities do not become holdings. Nine focused synthetic tests passed (three
+new inventory cases plus six summary/reconciliation regressions), covering
+missing quantities/prices, old/zero prices, empty search, pagination and no writes.
+Mobile/keyboard browser checks follow combined dashboard integration.
+
 ## 2026-11-09 - Known/visible inventory reconciliation (in review)
 
 Branch: `codex/dashboard-reconciliation`. Tracking: #81; stacked on #80.

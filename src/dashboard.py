@@ -142,11 +142,13 @@ def render(root=ROOT, params=None, now=None):
     page = params.pop("page", "overview")
     pages = {"overview": "Vue d’ensemble", "categories": "Catégories", "item": "Fiche objet",
              "performance": "Performance · Gains et pertes", "forecasts": "Prévisions", "community": "Recherche",
-             "reconciliation": "Rapprochement Steam"}
+             "reconciliation": "Rapprochement Steam", "inventory": "Inventaire"}
     if page not in pages:
         raise ValueError("Unknown dashboard view")
     search = params.pop("search", "").strip()
     observation_account = params.pop("observation_account", "all")
+    inventory_filters = {key: params.pop(key) for key in ("sort", "direction", "price_status", "quantity_status", "page_number", "page_size") if key in params}
+    inventory_filters["search"] = search
     allowed = {"category", "item_id", "start", "end"}
     if not set(params).issubset(allowed):
         raise ValueError("Unknown filter")
@@ -236,6 +238,9 @@ def render(root=ROOT, params=None, now=None):
         from dashboard_community import community_page
         start_filter = _parse_dates(pd.Series([params["start"]]), "period start").iloc[0] if params.get("start") else None
         body = community_page(root, data, start_filter, table)
+    if page == "inventory":
+        from dashboard_inventory import inventory_page
+        body = inventory_page(data, params, inventory_filters)
     if page == "reconciliation":
         from dashboard_reconciliation import reconciliation_page
         body = reconciliation_page(root, data, params, observation_account, table)
