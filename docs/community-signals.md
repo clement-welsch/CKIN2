@@ -81,3 +81,30 @@ remain separate and immutable; promotion of a community model into issued
 forecasts requires a reviewed result and a new archive model/schema version.
 No transactions are executed. Acceptance still requires a real annotated corpus,
 verified channels, source-access check and an empirical prices-only comparison.
+
+## Reviewed extraction sample
+
+Optional ignored `data/community/evaluation.json` contains manually reviewed
+passages. This measures mention extraction, separately from forecasting quality:
+
+```json
+{"schema":1,"passages":[{"video_id":"aaaaaaaaaaa","start_seconds":12.5,
+ "reviewed_at":"2026-11-09","expected":[{"item_id":"known catalog ID","match_kind":"exact"}]}]}
+```
+
+Use `start_seconds: null` for a TXT passage and `expected: []` only when a human
+reviewed that passage and confirmed no catalog mention. Include missed mentions
+in expected labels; do not label only extracted positives. A passage is keyed by
+video and offset; subtitle cues sharing an offset are reviewed together. Labels
+are `(item_id, match_kind)` sets, with exact/family/ambiguous kept distinct.
+Duplicate predictions do not inflate true positives. Unreviewed passages are
+excluded, not assumed negative. Duplicate reviews or unknown catalog labels fail.
+
+`research(..., as_of=...)` returns optional `evaluation` and the Research dashboard
+shows its micro precision, recall, F1, TP/FP/FN and reviewed sample size. Reviews
+after the cutoff are deferred. Zero denominators remain unavailable rather than
+perfect. Sample hash, extractor and alias revisions identify the experiment.
+Scores describe the whole reviewed sample through the selected end date, not
+object-filtered coverage. They neither calibrate matching specificity nor prove
+predictive value. No real annotated sample or measured quality is bundled;
+the tests use only synthetic examples. #40's real-corpus validation stays open.

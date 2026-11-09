@@ -15,6 +15,13 @@ def community_page(root, data, start, table):
     content += 'Les opinions ne constituent ni des faits vérifiés ni des conseils d’achat/vente. '
     content += 'Aucune acquisition de transcription ou requête réseau au chargement. Les transcriptions intégrales ne sont pas affichées.</p>'
     content += '<p>' + html.escape(result['status']) + '</p>'
+    content += '<h3>Qualité de l’extraction sur échantillon annoté</h3>'
+    if result['evaluation'] is None:
+        content += '<p>Aucun échantillon annoté disponible : précision et rappel non mesurés.</p>'
+    else:
+        content += table(pd.DataFrame([result['evaluation']]))
+        content += '<p>Mesures sur les passages explicitement relus, y compris les passages sans mention. '
+        content += 'Échantillon global, indépendant du filtre objet/période ; arrêté à la date de fin. Aucun bénéfice prédictif n’est démontré par ces scores.</p>'
     channels = result['channels'].copy()
     if not channels.empty:
         channels = channels.reindex(columns=['name', 'verified', 'verified_at', 'channel_id', 'url'])

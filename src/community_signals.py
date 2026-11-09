@@ -252,7 +252,7 @@ def research(root=ROOT, as_of=None):
     manifest_path = directory / "corpus.json"
     if not manifest_path.exists():
         return dict(status="No local corpus. Channel identities and authorized transcript access remain unverified.",
-                    channels=pd.DataFrame(), signals=pd.DataFrame(columns=SIGNALS), coverage=pd.DataFrame(), backtests=pd.DataFrame(), scores=pd.DataFrame(), audit=pd.DataFrame())
+                    evaluation=None, channels=pd.DataFrame(), signals=pd.DataFrame(columns=SIGNALS), coverage=pd.DataFrame(), backtests=pd.DataFrame(), scores=pd.DataFrame(), audit=pd.DataFrame())
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     aliases = json.loads((directory / "aliases.json").read_text(encoding="utf-8"))
     catalog = pd.read_csv(root / "data/processed/market_catalog.csv")
@@ -269,6 +269,11 @@ def research(root=ROOT, as_of=None):
     prices = pd.read_csv(path) if path.exists() else pd.DataFrame(columns=PRICES)
     cutoff = pd.Timestamp.now() if as_of is None else timestamp(as_of)
     backtests, scores, audit = compare(prices, signals, as_of=cutoff)
+    evaluation = None
+    sample_path = directory / "evaluation.json"
+    if sample_path.exists():
+        from community_evaluation import evaluate_extraction
+        evaluation = evaluate_extraction(signals, json.loads(sample_path.read_text(encoding="utf-8")), catalog, cutoff)
     return dict(status="Offline experimental study; no causal or predictive benefit established.",
                 channels=pd.DataFrame(manifest["channels"]), signals=signals, coverage=coverage,
-                backtests=backtests, scores=scores, audit=audit)
+                backtests=backtests, scores=scores, audit=audit, evaluation=evaluation)
