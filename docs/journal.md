@@ -81,6 +81,11 @@ Branch: `codex/dashboard-performance`. Tracking: #54.
 
 ## 2026-11-09 - Reviewed local skin catalog adapter (in review)
 
+Follow-up: `codex/catalog-source-audit` (#39, review pending) adds read-only
+per-record eligibility, duplicate exclusion and variant counts before selection.
+Five focused tests and the combined four-feature suite of 178 tests passed on
+synthetic data. Eligibility does not authenticate upstream or establish coverage.
+
 Branch: `codex/local-catalog-import`. Relates to #39 only.
 
 - Added a read-only adapter from a supplied pinned ByMykel skins_not_grouped

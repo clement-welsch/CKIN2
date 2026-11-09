@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
-from catalog_import import prepare_catalog
+from catalog_import import audit_catalog, prepare_catalog
 from market_universe import validate_release
 
 
@@ -29,6 +29,39 @@ def prepare(records, ids=None):
 
 
 class CatalogImportTests(unittest.TestCase):
+    def test_audit_rejects_all_duplicate_identities_and_reports_unusable_records(self):
+        records = source()
+        records.extend([dict(records[0], id='other-id'), dict(id='broken'), None])
+        raw = json.dumps(records, ensure_ascii=False).encode('utf-8')
+        result = audit_catalog(raw, revision='a'*40, source_updated_at='2026-11-01', collected_at='2026-11-09')
+        self.assertEqual(result['source_records'], 6)
+        self.assertEqual(result['eligible_source_ids'], ['skin-example-1', 'skin-example-2'])
+        self.assertEqual(result['rejected_records'], 4)
+        self.assertIn('Duplicate catalog identity', result['records'][0]['reasons'])
+        records = source() + [dict(source()[0], market_hash_name='Different listing')]
+        result = audit_catalog(json.dumps(records).encode(), revision='a'*40,
+                               source_updated_at='2026-11-01', collected_at='2026-11-09')
+        self.assertIn('Duplicate source ID', result['records'][-1]['reasons'])
+        for date in (None, '2027-01-01'):
+            with self.assertRaises(ValueError):
+                audit_catalog(raw, revision='a'*40, source_updated_at=date, collected_at='2026-11-09')
+
+    def test_audit_cli_does_not_publish_or_select(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / 'source.json'
+            path.write_text(json.dumps(source()), encoding='utf-8')
+            before = path.read_bytes()
+            result = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / 'src/catalog_import.py'),
+                                     'school', '--source', str(path), '--audit', '--revision', 'a'*40,
+                                     '--source-updated-at', '2026-11-01', '--collected-at', '2026-11-09'],
+                                    check=True, capture_output=True, text=True)
+            audit = json.loads(result.stdout)
+            self.assertEqual(audit['eligible_records'], 3)
+            self.assertNotIn('release', audit)
+            self.assertEqual(path.read_bytes(), before)
+            self.assertEqual(list(root.iterdir()), [path])
+
     def test_exact_variants_unicode_hash_and_measured_file_selection(self):
         records = source()
         before = copy.deepcopy(records)
