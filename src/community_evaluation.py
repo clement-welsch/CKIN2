@@ -62,10 +62,31 @@ def evaluate_extraction(signals, sample, catalog, as_of):
     tp, fp, fn = len(predicted & expected), len(predicted - expected), len(expected - predicted)
     precision = tp / (tp+fp) if tp+fp else None
     recall = tp / (tp+fn) if tp+fn else None
+    def metrics(predictions, labels):
+        true = len(predictions & labels)
+        false = len(predictions - labels)
+        missed = len(labels - predictions)
+        return dict(true_positives=true, false_positives=false, false_negatives=missed,
+                    precision=true / len(predictions) if predictions else None,
+                    recall=true / len(labels) if labels else None,
+                    f1=2*true/(2*true+false+missed) if 2*true+false+missed else None)
+
+    def evidence(values):
+        # A deterministic diagnostic contains identities and links, never text.
+        return [dict(video_id=video, start_seconds=offset, item_id=item, match_kind=kind,
+                     evidence_url='https://www.youtube.com/watch?v=' + video +
+                     ('&t=' + str(int(offset)) + 's' if offset is not None else ''))
+                for video, offset, item, kind in sorted(values, key=lambda v: (v[0], -1 if v[1] is None else v[1], v[2], v[3]))]
+
     return dict(status='reviewed_sample' if reviewed else 'no_reviewed_sample',
                 reviewed_passages=len(reviewed), deferred_passages=deferred, expected_mentions=len(expected),
                 predicted_mentions=len(predicted), true_positives=tp, false_positives=fp, false_negatives=fn,
                 precision=precision, recall=recall, f1=2*tp/(2*tp+fp+fn) if 2*tp+fp+fn else None,
+                by_match_kind={kind: metrics({row for row in predicted if row[3] == kind},
+                                            {row for row in expected if row[3] == kind})
+                               for kind in ('exact', 'family', 'ambiguous')},
+                errors=dict(false_positives=evidence(predicted - expected),
+                            false_negatives=evidence(expected - predicted)),
                 extractor=EXTRACTOR, sample_hash=digest(sample),
                 alias_hashes=sorted(eligible.alias_hash.dropna().unique().tolist()) if not eligible.empty else [],
                 limitation='Reviewed sample only; specificity scores are not calibrated probabilities or evidence of predictive value.')

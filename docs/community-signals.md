@@ -1,5 +1,11 @@
 # Offline creator-signal research (#40)
 
+Evaluation also reports precision/recall/F1 separately for exact, family and
+ambiguous matches, plus deterministic false-positive and false-negative lists
+with item identities and timestamped video links. These diagnostics use only
+reviewed, temporally eligible passages and contain no transcript text.
+An empty group retains unavailable metrics rather than invented perfect scores.
+
 This is an experimental **local corpus** workflow, not an automated YouTube
 scraper or a demonstrated forecasting improvement. The five requested creators
 are listed in `config/community.example.json` as unverified. No channel ID, URL,

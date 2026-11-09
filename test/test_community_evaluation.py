@@ -55,8 +55,15 @@ class CommunityEvaluationTests(unittest.TestCase):
             self.assertEqual(result['true_positives'], 0)
             self.assertEqual(result['false_positives'], 1)
             self.assertEqual(result['false_negatives'], 1)
+            self.assertEqual(result['by_match_kind']['exact']['false_positives'], 1)
+            self.assertEqual(result['by_match_kind']['ambiguous']['false_negatives'], 1)
+            self.assertIsNone(result['by_match_kind']['family']['f1'])
+            self.assertEqual(result['errors']['false_positives'][0]['match_kind'], 'exact')
+            self.assertEqual(result['errors']['false_negatives'][0]['match_kind'], 'ambiguous')
+            self.assertTrue(result['errors']['false_negatives'][0]['evidence_url'].endswith('&t=12s'))
             empty = evaluate_extraction(signals, dict(schema=1, passages=[]), catalog, '2023-03-01')
             self.assertIsNone(empty['f1'])
+            self.assertEqual(empty['errors'], dict(false_positives=[], false_negatives=[]))
 
     def test_research_and_dashboard_load_sample_without_exposing_transcripts_or_writing_files(self):
         with tempfile.TemporaryDirectory() as directory:
