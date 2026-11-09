@@ -42,3 +42,29 @@ Edit/reimport the Steam source to update overridden quantities; editing legacy
 CSV quantities has no effect while the override is active. `school` never
 writes. A complete import covers all six supported categories; unsupported Steam
 objects must be resolved deliberately rather than silently discarded.
+
+## Explicit multi-account selection
+
+To preview two or more owned accounts together, create a local envelope:
+
+```json
+{"schema": 2, "complete": true, "accounts": ["replace with complete schema-1 export objects"]}
+```
+
+Every element is a full schema-1 object as specified above, not a filename.
+Each account must occur exactly once, including accounts known to be empty.
+All page chains must validate before any combined preview is produced. Asset
+deduplication is scoped to `(account_id, asset_id)`; identical numeric asset IDs
+in different accounts are not silently merged. Quantities are summed only after
+exact catalog matching. The asset audit and `account_collected_at` retain each
+account's provenance. `collected_at` is the latest capture, not a claim that the
+accounts were captured atomically; review their time spread and avoid captures
+spanning transfers between accounts.
+
+Use the same preview/apply CLI with this envelope. Existing overrides require
+exactly the same account set; removing one account cannot silently remove its
+holdings. Restore the prior override before deliberately changing its scope.
+Each account's capture must be at least as recent as its prior capture, even
+if another account has a newer export. Single-account schema-1 inputs and legacy
+overrides remain supported. `school` permits preview only; all apply/restore
+examples in tests use temporary synthetic directories.

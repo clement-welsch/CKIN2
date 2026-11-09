@@ -102,8 +102,33 @@ def state(root):
     return dict(holdings=records, imported=sorted(imported))
 
 
+def export_selection(export):
+    """Keep asset deduplication scoped to each explicitly selected account."""
+    if not isinstance(export, dict):
+        raise ValueError("Expected an inventory export object")
+    if export.get("schema") == 1:
+        sources = [export]
+    elif export.get("schema") == 2 and export.get("complete") is True:
+        sources = export.get("accounts")
+        if not isinstance(sources, list) or not sources:
+            raise ValueError("Multi-account selection requires complete account exports")
+    else:
+        raise ValueError("Expected complete schema 1 export or schema 2 account selection")
+    frames, dates = [], {}
+    for source in sources:
+        assets = parse_export(source)
+        account = source["account_id"]
+        if account in dates:
+            raise ValueError("Duplicate account in inventory selection")
+        dates[account] = source["collected_at"]
+        frames.append(assets.assign(account_id=account))
+    ids = sorted(dates)
+    scope = ids[0] if len(ids) == 1 else "multi:" + digest(ids)
+    return pd.concat(frames, ignore_index=True), ids, dates, scope
+
+
 def preview(export, catalog, root=ROOT):
-    assets = parse_export(export)
+    assets, account_ids, account_dates, scope = export_selection(export)
     validate_catalog(catalog, catalog.assign(quantity=0)[HOLDINGS])
     before = state(root)
     mapping = catalog[["market_hash_name", *HOLDINGS[:3]]]
@@ -118,7 +143,8 @@ def preview(export, catalog, root=ROOT):
     changes.loc[~changes.item_id.isin(old.item_id), "quantity_before"] = 0
     changes.loc[~changes.item_id.isin(holdings.item_id), "quantity_after"] = 0
     changes["delta"] = changes.quantity_after - changes.quantity_before
-    plan = dict(schema=1, source_hash=digest(export), collected_at=export["collected_at"], account_id=export["account_id"],
+    plan = dict(schema=1, source_hash=digest(export), collected_at=max(account_dates.values(), key=timestamp), account_id=scope,
+                account_ids=account_ids, account_collected_at=account_dates,
                 before_hash=digest(before), holdings=json.loads(holdings.to_json(orient="records")),
                 imported=list(CATEGORIES), unresolved=unresolved,
                 assets=json.loads(matched.to_json(orient="records")),
@@ -143,17 +169,21 @@ def apply(export, catalog, token, root=ROOT, environment="school"):
             raise ValueError("Review token does not match current preview; preview again")
         if plan["unresolved"]:
             raise ValueError("Resolve unknown/unsupported market listings before applying")
-        if previous and previous.get("account_id") != plan["account_id"]:
-            raise ValueError("Override belongs to another account; multi-account merge requires explicit preparation")
-        if previous and timestamp(plan["collected_at"]) < timestamp(previous["collected_at"]):
-            raise ValueError("Refusing an older inventory export")
+        if previous:
+            previous_ids = previous.get("account_ids", [previous["account_id"]])
+            if sorted(previous_ids) != plan["account_ids"]:
+                raise ValueError("Override account selection differs; restore before explicitly changing account scope")
+            previous_dates = previous.get("account_collected_at", {previous["account_id"]: previous["collected_at"]})
+            if any(timestamp(plan["account_collected_at"][account]) < timestamp(date) for account, date in previous_dates.items()):
+                raise ValueError("Refusing an older inventory export for an account")
         backup = dict(schema=1, previous_override=previous, prior_effective=state(root), applied=plan)
         backup_key = digest(backup)
         backup_path = root / "data/imports" / f"{backup_key}.json"
         atomic_json(backup, backup_path)
         value = dict(schema=1, holdings=plan["holdings"], imported=plan["imported"],
                      source_hash=plan["source_hash"], collected_at=plan["collected_at"],
-                     account_id=plan["account_id"], backup_id=backup_key)
+                     account_id=plan["account_id"], account_ids=plan["account_ids"],
+                     account_collected_at=plan["account_collected_at"], backup_id=backup_key)
         atomic_json(value, path)
         return value
 

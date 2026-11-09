@@ -24,6 +24,42 @@ def catalog_fixture():
 
 
 class SteamInventoryImportTests(unittest.TestCase):
+    def test_multi_account_preview_scopes_assets_and_rejects_partial_or_changed_scope(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first, second = export_fixture(), export_fixture()
+            second.update(account_id="second", collected_at="2026-11-02")
+            second["pages"][0]["assets"][0]["amount"] = "3"
+            bundle = dict(schema=2, complete=True, accounts=[first, second])
+            plan = preview(bundle, catalog_fixture(), root)
+            self.assertEqual(plan["holdings"][0]["quantity"], 5)
+            self.assertEqual({a["account_id"] for a in plan["assets"]}, {"synthetic", "second"})
+            self.assertEqual(plan["account_collected_at"], {"synthetic": "2026-11-01", "second": "2026-11-02"})
+            self.assertFalse(list(root.rglob("*")))
+            with self.assertRaisesRegex(ValueError, "school"):
+                apply(bundle, catalog_fixture(), plan["review_token"], root)
+            result = apply(bundle, catalog_fixture(), plan["review_token"], root, "home")
+            before = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(result, apply(bundle, catalog_fixture(), plan["review_token"], root, "home"))
+            single = preview(first, catalog_fixture(), root)
+            with self.assertRaisesRegex(ValueError, "account selection"):
+                apply(first, catalog_fixture(), single["review_token"], root, "home")
+            stale = copy.deepcopy(bundle)
+            stale["accounts"][0]["collected_at"] = "2026-10-01"
+            stale["accounts"][1]["collected_at"] = "2026-11-03"
+            stale_plan = preview(stale, catalog_fixture(), root)
+            with self.assertRaisesRegex(ValueError, "older"):
+                apply(stale, catalog_fixture(), stale_plan["review_token"], root, "home")
+            self.assertEqual(before, {p: p.read_bytes() for p in root.rglob("*") if p.is_file()})
+            restore(root, "home")
+            self.assertFalse((root / "data/processed/steam_inventory_override.json").exists())
+            duplicate = dict(schema=2, complete=True, accounts=[first, first])
+            with self.assertRaisesRegex(ValueError, "Duplicate account"):
+                preview(duplicate, catalog_fixture(), root)
+            second["complete"] = False
+            with self.assertRaises(ValueError):
+                preview(bundle, catalog_fixture(), root)
+
     def test_preview_apply_repeat_and_restore_preserve_csvs(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

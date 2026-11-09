@@ -10,6 +10,18 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Explicit multi-account inventory preview (in review)
+
+Branch: `codex/steam-inventory-multi-account`. Relates to #38.
+
+- Added a schema-2 selection of complete schema-1 account exports, retaining
+  account-scoped assets and capture dates before exact-match quantity aggregation.
+- Rejected duplicate/partial accounts, implicit scope changes and per-account
+  stale captures. Existing single-account inputs and atomic restore remain valid.
+- All 163 tests passed, including four targeted import tests, on synthetic data.
+  Whitespace checks passed. School preview
+  writes nothing; real exports, account ownership and live access remain untested.
+
 ## 2026-11-09 - Community research dashboard (in review)
 
 Branch: `codex/dashboard-community`. Tracking: #56.
