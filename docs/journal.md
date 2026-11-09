@@ -1,13 +1,5 @@
 # Development journal
 
-## 2026-11-09 - Community extraction error diagnostics
-
-Branch: `codex/community-error-diagnostics`. Relates to #40; review pending.
-Added per-match-kind metrics and identity/timestamp evidence for false positives
-and missed mentions. Reviewed-sample and temporal eligibility rules are retained;
-no transcript text is exposed. Three focused evaluation tests passed on synthetic
-data; real extraction quality and predictive benefit remain unverified.
-
 Entries record development and integration milestones in reverse chronological
 order. Dates use Europe/Paris. Status statements describe the time of writing;
 linked issues and pull requests remain the source for their current status.
@@ -95,6 +87,12 @@ Branch: `codex/local-catalog-import`. Relates to #39 only.
   No Steam request, publication, inventory or personal notebook change.
 
 ## 2026-11-09 - Reviewed community extraction evaluation (in review)
+
+Follow-up: `codex/community-error-diagnostics` (#40, review pending) adds metrics
+by match kind and identity/timestamp evidence for false positives and missed
+mentions, without transcript text. Three focused tests and the combined
+four-feature suite of 178 tests passed on synthetic data. Real extraction quality
+and predictive benefit remain unverified.
 
 Branch: `codex/community-extraction-evaluation`. Relates to #40.
 
