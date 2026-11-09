@@ -252,13 +252,17 @@ def research(root=ROOT, as_of=None):
     manifest_path = directory / "corpus.json"
     if not manifest_path.exists():
         return dict(status="No local corpus. Channel identities and authorized transcript access remain unverified.",
-                    signals=pd.DataFrame(columns=SIGNALS), coverage=pd.DataFrame(), backtests=pd.DataFrame(), scores=pd.DataFrame(), audit=pd.DataFrame())
+                    channels=pd.DataFrame(), signals=pd.DataFrame(columns=SIGNALS), coverage=pd.DataFrame(), backtests=pd.DataFrame(), scores=pd.DataFrame(), audit=pd.DataFrame())
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     aliases = json.loads((directory / "aliases.json").read_text(encoding="utf-8"))
     catalog = pd.read_csv(root / "data/processed/market_catalog.csv")
     annotations_path = directory / "annotations.json"
     annotations = json.loads(annotations_path.read_text(encoding="utf-8")) if annotations_path.exists() else {}
     signals, coverage = extract(manifest, aliases, catalog, directory, annotations)
+    videos = pd.DataFrame(manifest["videos"])
+    if not videos.empty:
+        coverage = coverage.merge(videos[["video_id", "channel_id", "url", "language", "published_at", "collected_at"]],
+                                  on="video_id", validate="one_to_one")
     # Independent market universe observations include non-owned items.
     path = root / "data/market/observations.csv"
     from portfolio_data import PRICES
@@ -266,4 +270,5 @@ def research(root=ROOT, as_of=None):
     cutoff = pd.Timestamp.now() if as_of is None else timestamp(as_of)
     backtests, scores, audit = compare(prices, signals, as_of=cutoff)
     return dict(status="Offline experimental study; no causal or predictive benefit established.",
-                signals=signals, coverage=coverage, backtests=backtests, scores=scores, audit=audit)
+                channels=pd.DataFrame(manifest["channels"]), signals=signals, coverage=coverage,
+                backtests=backtests, scores=scores, audit=audit)
