@@ -23,6 +23,10 @@ def catalog_fixture():
     return pd.DataFrame([dict(item_id=identity("case", "Example"), category="case", item_name="Example", market_hash_name="Exact Case")])
 
 
+def owner_export_fixture():
+    return dict(export_fixture(), inventory_scope='full_portfolio', source='owner_export')
+
+
 class SteamInventoryImportTests(unittest.TestCase):
     def test_account_breakdown_preserves_empty_unknown_and_duplicate_assets(self):
         first, second, empty = export_fixture(), export_fixture(), export_fixture()
@@ -42,7 +46,7 @@ class SteamInventoryImportTests(unittest.TestCase):
             self.assertEqual(accounts['empty']['total_quantity'], 0)
             self.assertEqual(accounts['empty']['holdings'], [])
             self.assertEqual(sum(row['matched_quantity'] for row in accounts.values()),
-                             sum(row['quantity'] for row in result['holdings']))
+                             sum(row['quantity'] for row in result['observed_holdings']))
             self.assertFalse(list(Path(directory).rglob('*')))
 
     def test_missing_identity_fields_cannot_match_each_other_or_modify_inventory(self):
@@ -78,7 +82,7 @@ class SteamInventoryImportTests(unittest.TestCase):
     def test_multi_account_preview_scopes_assets_and_rejects_partial_or_changed_scope(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            first, second = export_fixture(), export_fixture()
+            first, second = owner_export_fixture(), owner_export_fixture()
             second.update(account_id="second", collected_at="2026-11-02")
             second["pages"][0]["assets"][0]["amount"] = "3"
             bundle = dict(schema=2, complete=True, accounts=[first, second])
@@ -119,7 +123,7 @@ class SteamInventoryImportTests(unittest.TestCase):
             path = directory / "drop_cases_inventory.csv"
             path.write_text("case_name,quantity\nExample,5\n", encoding="utf-8")
             original = path.read_bytes()
-            export, catalog = export_fixture(), catalog_fixture()
+            export, catalog = owner_export_fixture(), catalog_fixture()
             plan = preview(export, catalog, root)
             self.assertEqual(plan["changes"][0]["delta"], -3)
             self.assertFalse((root / "data/imports").exists())
@@ -150,7 +154,7 @@ class SteamInventoryImportTests(unittest.TestCase):
             mutate(broken)
             with self.assertRaises(ValueError):
                 parse_export(broken)
-        empty = export_fixture()
+        empty = owner_export_fixture()
         empty["pages"][0].update(assets=[], descriptions=[])
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -162,7 +166,7 @@ class SteamInventoryImportTests(unittest.TestCase):
     def test_stale_unknown_school_and_atomic_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            export, catalog = export_fixture(), catalog_fixture()
+            export, catalog = owner_export_fixture(), catalog_fixture()
             plan = preview(export, catalog, root)
             with self.assertRaises(ValueError):
                 apply(export, catalog, plan["review_token"], root)

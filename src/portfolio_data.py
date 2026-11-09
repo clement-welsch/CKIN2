@@ -36,8 +36,9 @@ def validate_holdings(frame):
 
 
 def load_holdings(root=ROOT):
-    # A reviewed Steam import replaces quantities as one atomic document. Legacy
-    # CSVs (including purchase references) remain untouched and restorable.
+    # Only an explicitly full-portfolio owner import replaces quantities. Visible
+    # observations live separately and never contribute additional holdings.
+    # Legacy overrides remain readable/restorable; their coverage is unverified.
     override = Path(root) / "data/processed/steam_inventory_override.json"
     if override.exists():
         import json
@@ -45,6 +46,8 @@ def load_holdings(root=ROOT):
         imported = data.get("imported")
         if data.get("schema") != 1 or not isinstance(imported, list) or not set(imported).issubset(CATEGORIES):
             raise ValueError("Invalid Steam inventory override")
+        if data.get('inventory_scope', 'full_portfolio') != 'full_portfolio':
+            raise ValueError('Visible Steam observations cannot be portfolio overrides')
         holdings = validate_holdings(pd.DataFrame(data["holdings"], columns=HOLDINGS))
         if not set(holdings.category).issubset(imported):
             raise ValueError("Steam holdings outside imported categories")
