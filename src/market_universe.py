@@ -41,7 +41,9 @@ def validate_release(release):
     if not frame.variant.isin(["normal", "stattrak", "souvenir"]).all():
         raise ValueError("Unknown listing variant")
     for column in ("wear", "collection"):
-        if not frame[column].map(lambda v: v is None or isinstance(v, str)).all():
+        # Pandas string inference can turn JSON null into NaN in mixed columns.
+        # Validate the source contract before that representation conversion.
+        if not all(column in row and (row[column] is None or isinstance(row[column], str)) for row in items):
             raise ValueError(f"Invalid {column}")
     return frame
 
@@ -76,6 +78,49 @@ def load_release(root, key, as_of):
     if release_id(release) != key or timestamp(release["collected_at"]) > timestamp(as_of):
         raise ValueError("Release unavailable at analysis origin or corrupt")
     return release, validate_release(release)
+
+
+def compare_releases(previous, current):
+    """Review source-ID continuity without rewriting identities or observations.
+
+    Removed means absent from this reviewed selection, not delisted by Steam.
+    Stable source IDs are the only matching key; fuzzy names never migrate data.
+    """
+    validate_release(previous)
+    validate_release(current)
+    if previous["source_url"] != current["source_url"]:
+        raise ValueError("Cannot infer source-ID continuity across different sources")
+    if timestamp(current["collected_at"]) < timestamp(previous["collected_at"]):
+        raise ValueError("Current release predates previous collection")
+    before = {row["source_id"]: row for row in previous["items"]}
+    after = {row["source_id"]: row for row in current["items"]}
+    changes = []
+    for source_id in sorted(before.keys() | after.keys()):
+        old, new = before.get(source_id), after.get(source_id)
+        fields = sorted(key for key in (old or {}).keys() | (new or {}).keys()
+                        if (old or {}).get(key) != (new or {}).get(key))
+        if old is None:
+            status = "added"
+        elif new is None:
+            status = "removed_from_selection"
+        elif not fields:
+            status = "unchanged"
+        elif any(key in fields for key in ("category", "variant", "wear")):
+            status = "identity_metadata_changed"
+        elif any(key in fields for key in ("item_id", "item_name", "market_hash_name")):
+            status = "renamed"
+        else:
+            status = "metadata_changed"
+        changes.append(dict(source_id=source_id, status=status, changed_fields=fields,
+                            before=old, after=new))
+    return dict(previous_release_id=release_id(previous), current_release_id=release_id(current),
+                source_url=current["source_url"], previous_revision=previous["source_revision"],
+                current_revision=current["source_revision"], previous_scope=previous["scope"],
+                current_scope=current["scope"], previous_count=len(before), current_count=len(after),
+                counts={status: sum(row["status"] == status for row in changes) for status in
+                        ("added", "removed_from_selection", "renamed", "identity_metadata_changed", "metadata_changed", "unchanged")},
+                changes=changes,
+                limits="Reviewed selections only; no delisting, exhaustive coverage or automatic identity migration inferred.")
 
 
 def collect(root, key, watchlist, *, environment="school", now=None, budget=20, fetch=None, pause=time.sleep):
@@ -143,8 +188,16 @@ if __name__ == "__main__":
     parser.add_argument("--release")
     parser.add_argument("--watchlist", type=Path, help="JSON array of stable IDs")
     parser.add_argument("--budget", type=int, default=20)
+    parser.add_argument("--compare", nargs=2, metavar=("PREVIOUS_RELEASE", "CURRENT_RELEASE"),
+                        help="Read-only source-ID comparison of two published releases")
     args = parser.parse_args()
-    if args.publish:
+    if args.compare:
+        if args.publish or args.release or args.watchlist:
+            parser.error("--compare cannot be combined with publish/collection arguments")
+        previous, _ = load_release(args.root, args.compare[0], pd.Timestamp.now())
+        current, _ = load_release(args.root, args.compare[1], pd.Timestamp.now())
+        print(json.dumps(compare_releases(previous, current), ensure_ascii=False, indent=2))
+    elif args.publish:
         print(publish(json.loads(args.publish.read_text(encoding="utf-8")), args.root, args.environment))
     else:
         if not args.release or not args.watchlist:
