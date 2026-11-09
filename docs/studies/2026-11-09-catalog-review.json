@@ -1,0 +1,88 @@
+{
+  "source_revision": "c52da3543f4cb57958d1e5c1847e6b692c02af4c",
+  "source_updated_at": "2026-11-05T01:50:23",
+  "collected_at": "2026-11-09T21:59:06.752900",
+  "source_sha256": "d17cc416560d837f59941e290526b51ae592aa77b58eca5194954018cab5c897",
+  "source_records": 21407,
+  "reviewed_selection": 3,
+  "source_fraction": 0.00014014107534918486,
+  "release_id": "b53414e7b96c2ac4c0c6d07fede0627e998a32fe3caddc5cf830a9b6a281792a",
+  "watchlist": [
+    "3696dcda-7f09-5205-8199-a0f63417ab6a",
+    "d66e8d0e-7a05-5c74-83ee-aa80e4e2a975",
+    "0d727b26-6de8-5940-8196-1a40ff12a829"
+  ],
+  "requests_budget": 3,
+  "currency": "EUR",
+  "collection_time": "2026-11-09T22:01:28.981533",
+  "outcomes": [
+    {
+      "item_id": "3696dcda-7f09-5205-8199-a0f63417ab6a",
+      "market_hash_name": "AK-47 | Redline (Field-Tested)",
+      "outcome": "updated",
+      "unit_price": 28.65
+    },
+    {
+      "item_id": "d66e8d0e-7a05-5c74-83ee-aa80e4e2a975",
+      "market_hash_name": "StatTrak™ AK-47 | Redline (Field-Tested)",
+      "outcome": "updated",
+      "unit_price": 60.04
+    },
+    {
+      "item_id": "0d727b26-6de8-5940-8196-1a40ff12a829",
+      "market_hash_name": "Souvenir AK-47 | Safari Mesh (Field-Tested)",
+      "outcome": "updated",
+      "unit_price": 2.57
+    }
+  ],
+  "index_rows": 3,
+  "index_diagnostic": {
+    "cohort_items": 3,
+    "excluded_estimated_dates": 0,
+    "weighting": "equal weight per item; global is equal weight across all items",
+    "max_age_days": 45,
+    "reason": "",
+    "base_date": "2026-11-09 22:01:28.981533",
+    "release_id": "b53414e7b96c2ac4c0c6d07fede0627e998a32fe3caddc5cf830a9b6a281792a",
+    "cohort_ids": [
+      "0d727b26-6de8-5940-8196-1a40ff12a829",
+      "3696dcda-7f09-5205-8199-a0f63417ab6a",
+      "d66e8d0e-7a05-5c74-83ee-aa80e4e2a975"
+    ],
+    "scope": "Explicitly reviewed exact weapon/glove skin variants; no float/pattern premiums"
+  },
+  "portfolio_rows": 0,
+  "limits": "Three exact weapon variants only; no market-wide or other-category coverage claim. Current source membership cannot be projected backward.",
+  "reviewed_variants": [
+    {
+      "category": "skin",
+      "collection": null,
+      "item_id": "3696dcda-7f09-5205-8199-a0f63417ab6a",
+      "item_name": "AK-47 | Redline (Field-Tested)",
+      "market_hash_name": "AK-47 | Redline (Field-Tested)",
+      "source_id": "skin-91a429af4a60_1",
+      "variant": "normal",
+      "wear": "Field-Tested"
+    },
+    {
+      "category": "skin",
+      "collection": null,
+      "item_id": "d66e8d0e-7a05-5c74-83ee-aa80e4e2a975",
+      "item_name": "StatTrak™ AK-47 | Redline (Field-Tested)",
+      "market_hash_name": "StatTrak™ AK-47 | Redline (Field-Tested)",
+      "source_id": "skin-91a429af4a60_1_st",
+      "variant": "stattrak",
+      "wear": "Field-Tested"
+    },
+    {
+      "category": "souvenir",
+      "collection": null,
+      "item_id": "0d727b26-6de8-5940-8196-1a40ff12a829",
+      "item_name": "Souvenir AK-47 | Safari Mesh (Field-Tested)",
+      "market_hash_name": "Souvenir AK-47 | Safari Mesh (Field-Tested)",
+      "source_id": "skin-430436880a99_2_so",
+      "variant": "souvenir",
+      "wear": "Field-Tested"
+    }
+  ]
+}

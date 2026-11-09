@@ -114,3 +114,24 @@ Scores describe the whole reviewed sample through the selected end date, not
 object-filtered coverage. They neither calibrate matching specificity nor prove
 predictive value. No real annotated sample or measured quality is bundled;
 the tests use only synthetic examples. #40's real-corpus validation stays open.
+
+## Real-corpus readiness check (#40)
+
+`python src/community_readiness.py school --root PATH --as-of 2026-11-09`
+prints a read-only readiness matrix and descriptive common-window MAE differences.
+It returns 1 when evidence is missing and 0 only when inputs are ready for
+empirical review; neither status certifies predictive benefit. It checks the five
+requested exact channel identities and dated verification, eligible transcripts,
+a dated `access_review` declaration (`authorized`, `reviewed_at`, `method`),
+manual extraction evaluation and same-window price/community scores. Invalid
+inputs are reported without rewriting files or contacting YouTube. The Research
+page shows the same missing prerequisites while reusing its computed results.
+
+On 2026-11-09 no real authorized corpus or dated manual evaluation was available
+in this workspace. Public searches suggested candidate creator pages but did not
+replace the user's exact identity confirmation, acquisition rights or a corpus.
+The [official caption-download documentation](https://developers.google.com/youtube/data/reference/rest/v3/captions/download)
+was rechecked: editing permission is required. No scraping, transcription
+acquisition, causal conclusion, measured real-world improvement or trade was
+performed. #40 remains blocked on those external inputs; synthetic regression
+success is not a reason to close its real-corpus acceptance criteria.

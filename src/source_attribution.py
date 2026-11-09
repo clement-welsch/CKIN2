@@ -4,7 +4,8 @@ import html
 import json
 from pathlib import Path
 
-REVISION = "b014e92bc37f4143ead2cb1af26aa85f2c3d6688"
+REVISION = "c52da3543f4cb57958d1e5c1847e6b692c02af4c"
+REVIEWED_REVISIONS = {REVISION, "b014e92bc37f4143ead2cb1af26aa85f2c3d6688"}
 SOURCE = "https://github.com/ByMykel/CSGO-API"
 LICENSE_PATH = Path(__file__).resolve().parents[1] / "licenses/ByMykel-CSGO-API-MIT.txt"
 
@@ -13,9 +14,14 @@ def sources_page(root):
     escape = html.escape
     releases = []
     for path in sorted((Path(root) / "data/market/releases").glob("*.json")):
-        release = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            release = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(release, dict):raise ValueError('Invalid release header')
+        except (OSError, ValueError):
+            releases.append('<tr><td colspan="4">Release locale illisible ; aucune provenance vérifiée pour ce fichier.</td></tr>')
+            continue
         source, revision = release.get("source_url", ""), release.get("source_revision", "")
-        reviewed = source.rstrip("/") == SOURCE and revision == REVISION
+        reviewed = isinstance(source, str) and isinstance(revision, str) and source.rstrip("/") == SOURCE and revision in REVIEWED_REVISIONS
         releases.append("<tr>" + "".join("<td>" + escape(str(v)) + "</td>" for v in
                         (source, revision, release.get("collected_at", ""), "Référence vérifiée" if reviewed else "Revue de licence à vérifier")) + "</tr>")
     local = ("<div style='overflow:auto'><table><tr><th>Source déclarée</th><th>Révision</th><th>Import</th><th>Licence</th></tr>" +
@@ -27,7 +33,7 @@ def sources_page(root):
 <main><a href="/">← Portefeuille</a><h1>Sources et licences</h1>
 <section><h2>ByMykel / CSGO-API</h2><p>Catalogue optionnel de métadonnées d'objets, créé par
 <a href="{SOURCE}">ByMykel</a>. Licence MIT · Copyright (c) 2023 ByMykel.</p>
-<p>Licence examinée le 04/11/2026 à la révision <code>{REVISION}</code>.
+<p>Licence examinée le 09/11/2026 à la révision <code>{REVISION}</code>.
 <a href="{SOURCE}/blob/{REVISION}/LICENSE">Source de la licence</a>.</p>
 <p>Le catalogue reste un import local facultatif. Aucun catalogue ou visuel tiers n'est embarqué dans CKIN2.
 Cette référence de licence ne signifie pas que tous les imports locaux ont été vérifiés.</p>

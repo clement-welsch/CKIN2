@@ -1,11 +1,31 @@
 {
   "schema": 1,
   "channels": [
-    {"name": "MasterShiny CS2", "verified": false},
-    {"name": "rubyjetski", "verified": false},
-    {"name": "IAMJERM - CS2", "verified": false},
-    {"name": "TDM_Heyzeus", "verified": false},
-    {"name": "LeChineur", "verified": false}
+    {
+      "name": "MasterShiny CS2",
+      "verified": false
+    },
+    {
+      "name": "rubyjetski",
+      "verified": false
+    },
+    {
+      "name": "IAMJERM - CS2",
+      "verified": false
+    },
+    {
+      "name": "TDM_Heyzeus",
+      "verified": false
+    },
+    {
+      "name": "LeChineur",
+      "verified": false
+    }
   ],
-  "videos": []
+  "videos": [],
+  "access_review": {
+    "authorized": false,
+    "reviewed_at": null,
+    "method": ""
+  }
 }
