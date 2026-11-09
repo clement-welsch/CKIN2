@@ -10,6 +10,17 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Known/visible inventory reconciliation (in review)
+
+Branch: `codex/dashboard-reconciliation`. Tracking: #81; stacked on #80.
+Added validated read-only selection/account comparisons with the global known
+portfolio, capture provenance/dates, unresolved mappings, omitted accounts and
+explicit transfer/storage limits. Missing observations stay unknown and cached
+captures are never summed. Three synthetic tests passed for empty/stored/unknown
+holdings, account subsets, capture skew, transfers, future/malformed captures,
+newly visible identities and unchanged fixture bytes with networking forbidden.
+No inventory was collected or modified during consultation.
+
 ## 2026-11-09 - Compact portfolio landing page (in review)
 
 Branch: `codex/dashboard-overview`. Tracking: #80; stacked on #89 (#78).

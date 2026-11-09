@@ -91,3 +91,15 @@ valuation. Quantity provenance/date, price date range and recorded snapshot date
 are separate. Historical selection never reuses current quantities. Legacy
 owner overrides remain labeled unverified. Detailed tables remain in category
 and exact-object views rather than the landing page.
+
+## Known versus visible Steam inventory (#81)
+
+The reconciliation page reads only `steam_inventory_visible.json`'s latest
+explicit account selection, validates per-account dates/identities and aggregate
+quantities, and compares it with the selected known portfolio. Choose all selected
+accounts or one account; omitted cached accounts never contribute quantities.
+Missing visible rows stay unknown, including empty captures and stored items.
+Dates, source, unresolved mappings and omitted accounts remain visible. Capture
+skew and transfer risks are explained without inferring a transfer, sale or
+storage location. Future captures are unavailable in historical views; audit
+files are not silently replayed. The page never applies adjustments or collects.
