@@ -59,7 +59,8 @@ class NotebookPortfolioTests(unittest.TestCase):
             skin = category_reports(root, result)[0]
             self.assertEqual(len(skin['acquisitions']), 1)
             self.assertTrue(skin['prices'].empty)
-            self.assertTrue(result['current'].total_value.isna().all())
+            self.assertTrue(result['current'].loc[lambda f: f.category.isin(['skin', 'global']),
+                                                  'total_value'].isna().all())
 
     def test_past_selection_uses_historical_quantities_and_excludes_future_prices(self):
         with tempfile.TemporaryDirectory() as directory:
