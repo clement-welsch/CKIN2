@@ -1,5 +1,13 @@
 # Assisted Steam inventory import (#38)
 
+## Per-account preview
+
+The preview includes capture dates, deduplicated asset counts, matched and
+unresolved quantities, unresolved exact names and item holdings per account.
+Complete empty accounts remain visible with zero totals. These are captured
+quantities, not per-account changes or transaction evidence. Account details
+are bound to the review token; existing global matching and apply rules remain.
+
 The first adapter accepts a **local JSON export**, including private inventories
 exported by their owner. It does not log into Steam or collect credentials.
 Steam asset identity is retained in an ignored audit; the exact market name is
