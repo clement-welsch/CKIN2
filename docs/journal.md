@@ -1,12 +1,5 @@
 # Development journal
 
-## 2026-11-09 - Steam account quantity breakdown
-
-Branch: `codex/steam-account-breakdown`. Relates to #38; review pending.
-Added per-account matched/unresolved quantities and item holdings to the signed
-preview, retaining empty accounts and account-scoped asset deduplication.
-Seven synthetic import tests passed. No live Steam access or personal writes.
-
 Entries record development and integration milestones in reverse chronological
 order. Dates use Europe/Paris. Status statements describe the time of writing;
 linked issues and pull requests remain the source for their current status.
@@ -28,6 +21,12 @@ Branch: `codex/steam-export-validation`. Relates to #38.
   after rejected previews. No Steam calls or personal inventory writes.
 
 ## 2026-11-09 - Explicit multi-account inventory preview (in review)
+
+Follow-up: `codex/steam-account-breakdown` (#38, review pending) adds per-account
+matched/unresolved quantities and item holdings to the signed preview, retaining
+empty accounts and account-scoped deduplication. Seven focused import tests and
+the combined four-feature suite of 178 tests passed on synthetic data.
+No live Steam access or personal data writes were performed.
 
 Branch: `codex/steam-inventory-multi-account`. Relates to #38.
 
