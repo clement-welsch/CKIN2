@@ -19,6 +19,7 @@ from portfolio_selection import selection, subset_snapshots, analysis_date
 from portfolio_data import CATEGORIES, ROOT, _parse_dates
 from prediction import experiment, scores
 from dashboard_forecasts import forecast_figures
+from dashboard_overview import overview as portfolio_overview
 from transactions import COLUMNS as TRANSACTIONS, validate_transactions
 from source_attribution import sources_page
 from dashboard_categories import LABELS, category_data, category_figures, value_distribution
@@ -178,7 +179,7 @@ def render(root=ROOT, params=None, now=None):
     body += '<p>Provenance des quantités : ' + escaped(basis_labels[provenance["basis"]]) + '</p>'
     if provenance.get("collected_at") is not None and pd.notna(provenance["collected_at"]):
         body += '<p>Date enregistrée : ' + escaped(provenance["collected_at"]) + '</p>'
-    overview = body
+    overview = portfolio_overview(data, params)
     item_body = section("Objets", table(data["detail"].loc[data["detail"].state.eq("holdings")]))
     performance_body = section("Historique du portefeuille", '<p>Prix × quantités de chaque snapshot. Les ajouts et retraits modifient la valeur ; ce graphique ne représente pas un rendement.</p>' +
                     chart(data["historical"].loc[data["historical"].category.isin([*data["categories"], "global"])], "snapshot_date", "total_value", "Valeur complète — EUR"))
@@ -214,7 +215,7 @@ def render(root=ROOT, params=None, now=None):
         forecast_body += section("Erreurs des prévisions archivées", '<p>Évaluation séparée par nature (issued/retrospective), panier, révision, code et paramètres d’origine. '
                                  'Les cibles non réalisées ou sans prix suffisamment frais ne contribuent pas aux erreurs. '
                                  'Sous un filtre objet, aucune prévision de catégorie n’est réétiquetée.</p>' + table(data["archive_metrics"]))
-    body = {"overview": overview + item_body, "item": item_body,
+    body = {"overview": overview, "item": item_body,
             "performance": performance_body, "forecasts": forecast_body,
             "community": section("Recherche communautaire", "<p>Le notebook community_book et son prototype hors ligne sont disponibles. Leur intégration détaillée dans cette vue est suivie dans #56 ; aucun résultat validé n’est supposé.</p>")}.get(page, "")
     if page == "categories":
@@ -281,7 +282,7 @@ def render(root=ROOT, params=None, now=None):
     return f'''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CKIN2 · Portefeuille</title><script src="/plotly.js"></script><style>
 *{{box-sizing:border-box}}body{{margin:0;background:#101720;color:#e6edf5;font:15px/1.6 system-ui,sans-serif}}main{{max-width:1440px;margin:auto;padding:32px}}h1{{font-size:38px;margin:0}}h2{{font-size:22px}}.eyebrow{{color:#f8b55c;letter-spacing:3px}}p,small{{color:#acbbcd}}section,form{{background:#17202b;border:1px solid #2b394b;border-radius:16px;padding:24px;margin:22px 0}}form{{display:flex;flex-wrap:wrap;gap:16px;align-items:end}}label{{display:grid;gap:6px;min-width:140px;flex:1}}select,input,button{{font:inherit;border:1px solid #526079;border-radius:7px;padding:10px;background:#101720;color:#e6edf5;max-width:100%;min-width:0}}button{{background:#f8b55c;color:#101720;cursor:pointer}}.cards{{display:flex;gap:20px;flex-wrap:wrap}}article{{flex:1;min-width:220px;padding:20px;background:#101720;border-radius:10px}}strong{{display:block;font-size:28px}}.table{{overflow:auto;max-height:480px}}table{{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}}td,th{{padding:10px;border-bottom:1px solid #324154;text-align:left}}th{{position:sticky;top:0;background:#202d3d}}.empty{{padding:20px;border:1px dashed #526079;border-radius:10px}}@media(max-width:650px){{main{{padding:14px}}section,form{{padding:14px}}h1{{font-size:29px}}label{{min-width:100%}}.cards{{display:block}}article{{margin-bottom:12px}}}}
-</style><style>nav{{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}}nav a{{color:#d4deeb;text-decoration:none;padding:10px 15px;border:1px solid #526079;border-radius:9px}}nav a[aria-current]{{background:#f8b55c;color:#101720}}h3{{font-size:17px}}</style></head><body><main><div class="eyebrow">CKIN2 / OBSERVATOIRE</div><h1>Mon portefeuille CS2</h1>{navigation}
+</style><style>nav{{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}}nav a{{color:#d4deeb;text-decoration:none;padding:10px 15px;border:1px solid #526079;border-radius:9px}}nav a[aria-current]{{background:#f8b55c;color:#101720}}h3{{font-size:17px}}a{{color:#f8b55c}}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{{outline:3px solid #f8b55c;outline-offset:3px}}dt{{font-weight:600}}dd{{margin:0 0 12px;overflow-wrap:anywhere}}</style></head><body><main><div class="eyebrow">CKIN2 / OBSERVATOIRE</div><h1>Mon portefeuille CS2</h1>{navigation}
 <p>Lecture seule · données locales · actualisé à chaque chargement · analyse au {escaped(data["cutoff"])}<br>Dernier prix utilisé : {escaped(latest_price)} · dernier snapshot de la période : {escaped(last_snapshot)}</p>
 <form method="get"><input type="hidden" name="page" value="{escaped(page)}"><label>Catégorie<select name="category" onchange="this.form.elements.item_id.value=''">{categories}</select></label><label>Objet<select name="item_id">{options}</select></label><label>Depuis<input type="date" name="start" value="{escaped(params.get("start", ""))}"></label><label>Jusqu’au<input type="date" name="end" value="{escaped(params.get("end", ""))}"></label><button>Actualiser</button><a href="/?page={escaped(page)}" style="color:#f8b55c">Réinitialiser</a></form>{body}</main></body></html>'''
 

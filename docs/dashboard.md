@@ -80,3 +80,14 @@ rows, so a covered subtotal is never presented as a complete portfolio change.
 FIFO item results and realized sales are cumulative through the selected end,
 independent of period start. Net proceeds include recorded sale fees; unknown
 costs and reconciliation failures remain unavailable. No future fee is inferred.
+
+## Compact portfolio summary (#80)
+
+The landing page presents shared total/known values, held distinct identities,
+quantity/price coverage, missing categories and old prices. Zero positions do not
+count as holdings; unknown quantities remain visible. Prices older than 45 days
+at the analysis cutoff are labeled old without silently dropping their known
+valuation. Quantity provenance/date, price date range and recorded snapshot date
+are separate. Historical selection never reuses current quantities. Legacy
+owner overrides remain labeled unverified. Detailed tables remain in category
+and exact-object views rather than the landing page.

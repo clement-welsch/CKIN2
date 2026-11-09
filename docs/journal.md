@@ -10,6 +10,17 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Compact portfolio landing page (in review)
+
+Branch: `codex/dashboard-overview`. Tracking: #80; stacked on #89 (#78).
+Shared totals, held identities and quantity/price coverage now lead the page.
+Quantity provenance, price freshness and snapshot dates are separate; historical
+mode, missing snapshots and unverified legacy imports are explicit. Detail tables
+remain accessible in category/object views. Six focused synthetic tests passed
+(three new summary tests plus category regressions), including partial/empty/stale
+data, shared-value parity, historical quantities and no writes/network. Visual
+browser checks follow combined dashboard integration. No personal data was used.
+
 ## 2026-11-09 - Shared notebook/dashboard portfolio contract (in review)
 
 Branch: `codex/unified-notebook-data`. Tracking: #78; targets `develop`.
