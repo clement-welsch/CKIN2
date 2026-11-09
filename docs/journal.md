@@ -10,6 +10,34 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Shared notebook/dashboard portfolio contract (in review)
+
+Branch: `codex/unified-notebook-data`. Tracking: #78; targets `develop`.
+
+- Routed all four category notebooks through shared holdings, recent market
+  observations, category normalization and snapshot valuation/selection. Exact
+  variants and acquisition references remain separate; visible Steam captures
+  never contribute owned quantities. Owner replacements replace CSV quantities.
+- Added explicit notebook data-root/analysis-clock controls and quantity
+  provenance. Historical mode selects recorded snapshots only; current mode is
+  labeled as current known holdings. The cases index uses the held cohort and
+  shared freshness/estimated-date rules; historical changes use shared coverage.
+- Kept declared CSV purchase comparisons for CSV holdings, without transferring
+  those costs to replacement/historical lots. Global, prediction and research
+  notebooks expose their existing distinct scopes and the explicit analysis date.
+- Six new synthetic tests cover cross-entry-point quantity/value/coverage parity,
+  complete/partial/empty notebooks, exact variants, recent/future prices,
+  acquisition separation, unknown quantities, owner/visible imports, unverified
+  overrides and historical snapshots. All 193 synthetic tests passed, including local HTTP checks.
+  Notebook schemas and empty outputs, dependency compatibility and whitespace
+  checks passed on Linux CPython 3.12.14 with the pinned direct dependencies.
+
+Limits: no personal CSVs, Steam calls or inventory edits were used. The reference
+Python 3.14.6/Windows CI and visual browser rendering require separate verification.
+Legacy case-only snapshot CSVs are not silently combined with global snapshots;
+category reports now consume the recorded six-category history contract. No
+forecast model was changed. Real data coverage remains dependent on local files.
+
 ## 2026-11-09 - Steam export identity validation (in review)
 
 ### Coverage correction - in review

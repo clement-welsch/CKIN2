@@ -15,6 +15,7 @@ from plotly.offline import get_plotlyjs
 from forecast_archive import evaluate, load_archive_prices
 from global_analysis import analyze, explain_changes, market_indices
 from global_snapshots import COLUMNS, build_snapshot, value_snapshots
+from portfolio_selection import selection, subset_snapshots, analysis_date
 from portfolio_data import CATEGORIES, ROOT, _parse_dates
 from prediction import experiment, scores
 from dashboard_forecasts import forecast_figures
@@ -29,28 +30,11 @@ def escaped(value):
     return html.escape(str(value), quote=True)
 
 
-def subset_snapshots(snapshots, categories, item_id):
-    """Keep six explicit category markers so shared validation/valuation applies."""
-    rows = []
-    for stamp, group in snapshots.groupby("snapshot_date"):
-        for category in CATEGORIES:
-            selected = group.loc[group.category.eq(category)]
-            if category not in categories:
-                selected = selected.iloc[:0]
-            elif item_id:
-                selected = selected.loc[~selected.state.eq("holdings") | selected.item_id.eq(item_id)]
-            if selected.empty:
-                rows.append(dict(snapshot_date=stamp, category=category, state="empty", item_id=None, item_name=None, quantity=0))
-            else:
-                rows.extend(selected[COLUMNS].to_dict("records"))
-    return pd.DataFrame(rows, columns=COLUMNS)
-
-
 def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=None, components=None):
     root = Path(root)
     if category not in (*CATEGORIES, "all"):
         raise ValueError("Unknown category")
-    now = _parse_dates(pd.Series([pd.Timestamp.now() if now is None else now]), "dashboard now").iloc[0]
+    now = analysis_date(now)
     def date(value):
         return _parse_dates(pd.Series([value]), "filter date").iloc[0] if value else None
     start, end = date(start), date(end)
@@ -67,12 +51,7 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
         raise ValueError("Unknown object for this category")
     # Current holdings cannot be projected backward when end precedes now.
     historical_mode = end is not None and cutoff < now
-    if historical_mode:
-        available = data["history"]
-        current_snapshot = available.loc[available.snapshot_date.eq(available.snapshot_date.max())]
-    else:
-        current_snapshot = data["current_detail"][COLUMNS]
-    detail, current = value_snapshots(subset_snapshots(current_snapshot, categories, item_id), data["prices"])
+    detail, current = selection(data, categories, item_id=item_id, historical=historical_mode)
     history = data["history"]
     if start is not None:
         history = history.loc[history.snapshot_date.ge(start)]
@@ -136,7 +115,9 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
                 indices=indices, diagnostic=diagnostic, transactions=transactions,
                 pnl=pnl, sales=sales, pnl_message=pnl_message, contributions=contributions,
                 prediction=prediction, archive=archive, archive_metrics=archive_metrics,
-                prices=data["prices"], selected_item_id=item_id)
+                prices=data["prices"], selected_item_id=item_id,
+                provenance=(dict(basis="recorded_snapshot", collected_at=detail.snapshot_date.max())
+                            if historical_mode else data["provenance"]))
 
 
 def table(frame):
@@ -188,6 +169,15 @@ def render(root=ROOT, params=None, now=None):
                    '</strong></article><article><small>Sous-total connu</small><strong>' + money(known) + '</strong></article></div>' +
                    ('<p>Quantités du dernier snapshot enregistré avant la fin de période ; aucune projection rétroactive de l’inventaire actuel.</p>' if data["historical_mode"] else '<p>Quantités actuelles, prix disponibles à la date affichée.</p>') +
                    table(data["current"].loc[data["current"].category.isin([*data["categories"], "global"])]))
+    basis_labels = {"manual_csv": "CSV locaux ; date des quantités non documentée",
+                    "not_imported": "Aucun inventaire importé",
+                    "owner_declared_full_portfolio": "Export propriétaire déclaré complet",
+                    "legacy_override_coverage_unverified": "Ancien remplacement : couverture non vérifiée",
+                    "recorded_snapshot": "Snapshot enregistré"}
+    provenance = data["provenance"]
+    body += '<p>Provenance des quantités : ' + escaped(basis_labels[provenance["basis"]]) + '</p>'
+    if provenance.get("collected_at") is not None and pd.notna(provenance["collected_at"]):
+        body += '<p>Date enregistrée : ' + escaped(provenance["collected_at"]) + '</p>'
     overview = body
     item_body = section("Objets", table(data["detail"].loc[data["detail"].state.eq("holdings")]))
     performance_body = section("Historique du portefeuille", '<p>Prix × quantités de chaque snapshot. Les ajouts et retraits modifient la valeur ; ce graphique ne représente pas un rendement.</p>' +
