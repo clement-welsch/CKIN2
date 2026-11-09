@@ -33,6 +33,12 @@ Tables scroll horizontally on narrow screens. Charts resize and preserve gaps;
 missing full totals are never connected across incomplete snapshots. The
 dashboard is French; repository interfaces/documentation remain English.
 
+## Visible inventory reconciliation (#81)
+
+The [visible-inventory reconciliation page](dashboard-reconciliation.md) at
+`/reconciliation` compares current known quantities with the selected local
+account capture. It remains read-only and independent of optional price files.
+
 ## Forecast diagnostics (#55)
 
 The forecasts view plots actual/predicted fixed-basket indices and common-window
