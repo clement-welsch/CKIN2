@@ -271,7 +271,7 @@ def render(root=ROOT, params=None, now=None):
             body += section(title, content)
     navigation = '<nav aria-label="Vues du dashboard">' + "".join(
         '<a ' + ('aria-current="page" ' if key == page else '') + 'href="/?' +
-        escaped(urlencode({**params, "page": key})) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/sources">Sources et licences</a></nav>'
+        escaped(urlencode({**params, "page": key})) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/reconciliation">Patrimoine et inventaire visible</a><a href="/sources">Sources et licences</a></nav>'
     latest_price = data["detail"].price_date.max() if len(data["detail"]) else pd.NaT
     if selected_detail is not None:
         latest_price = selected_detail["latest_date"]
@@ -298,6 +298,13 @@ def make_server(root=ROOT, port=8765):
                     content, mime = get_plotlyjs(), "application/javascript"
                 elif path.path == "/sources":
                     content, mime = sources_page(root), "text/html; charset=utf-8"
+                elif path.path == "/reconciliation":
+                    from dashboard_reconciliation import render_reconciliation
+                    query = parse_qs(path.query)
+                    if any(len(values) != 1 for values in query.values()):
+                        raise ValueError("Duplicate filters")
+                    content = render_reconciliation(root, {key: values[0] for key, values in query.items()})
+                    mime = "text/html; charset=utf-8"
                 elif path.path == "/":
                     query = parse_qs(path.query)
                     if any(len(values) != 1 for values in query.values()):
