@@ -392,6 +392,10 @@ The project follows a **progressive, data-driven approach**, starting by making 
 
 ## Category notebooks and local CSV conversion
 
+Portfolio reports now use the dashboard's shared data selection. See the
+[notebook data contract](docs/notebook-data-contract.md) for `CKIN2_DATA_ROOT`,
+`CKIN2_AS_OF`, quantity provenance, and the separate legacy case-history scope.
+
 Run `python src/process_categories.py` from the project root to normalize the
 four exports in `data/raw/`. This regenerates `skins_inventory.csv`,
 `skins_prices.csv`, `souvenirs_inventory.csv`, `souvenirs_prices.csv`,
