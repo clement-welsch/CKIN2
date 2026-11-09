@@ -397,6 +397,10 @@ The project follows a **progressive, data-driven approach**, starting by making 
 
 ## Category notebooks and local CSV conversion
 
+For optional exact dashboard filters from a notebook, see the
+[notebook filter adapter](docs/notebook-data-contract.md). The authored notebooks
+keep the shared data contract described in the category workflow.
+
 Run `python src/process_categories.py` from the project root to normalize the
 four exports in `data/raw/`. This regenerates `skins_inventory.csv`,
 `skins_prices.csv`, `souvenirs_inventory.csv`, `souvenirs_prices.csv`,
