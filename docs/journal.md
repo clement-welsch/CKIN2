@@ -10,6 +10,17 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Dashboard performance details (local review)
+
+Branch: `codex/dashboard-performance`. Tracking: #54.
+
+- Exposed shared price/quantity contributions with period and identity filters,
+  preserving the preceding snapshot and explicit incomplete coverage.
+- Added cumulative FIFO sale details with recorded net proceeds and cost limits.
+- Validation: two focused synthetic tests passed, including shared-calculation
+  parity, period boundaries, empty data and unchanged fixture files. Initial
+  baseline: 153 tests passed. No Steam access or personal data writes.
+
 ## 2026-11-04 - Detailed dashboard item view (in review)
 
 Branch: `codex/dashboard-item-detail`. Tracking: #53. Depends on #52/#51.

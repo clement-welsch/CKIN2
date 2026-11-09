@@ -32,3 +32,14 @@ object forecasts and are hidden under an object filter.
 Tables scroll horizontally on narrow screens. Charts resize and preserve gaps;
 missing full totals are never connected across incomplete snapshots. The
 dashboard is French; repository interfaces/documentation remain English.
+
+## Performance details (#54)
+
+The performance view reuses `explain_changes` for item-level price/quantity
+contributions. Period start selects interval end dates while retaining the
+preceding snapshot. Category and exact-item filters apply before calculation.
+Charts sum only covered contributions; the detailed table retains unavailable
+rows, so a covered subtotal is never presented as a complete portfolio change.
+FIFO item results and realized sales are cumulative through the selected end,
+independent of period start. Net proceeds include recorded sale fees; unknown
+costs and reconciliation failures remain unavailable. No future fee is inferred.

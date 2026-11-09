@@ -13,7 +13,7 @@ import plotly.express as px
 from plotly.offline import get_plotlyjs
 
 from forecast_archive import evaluate, load_archive_prices
-from global_analysis import analyze, market_indices
+from global_analysis import analyze, explain_changes, market_indices
 from global_snapshots import COLUMNS, build_snapshot, value_snapshots
 from portfolio_data import CATEGORIES, ROOT, _parse_dates
 from prediction import experiment
@@ -76,6 +76,11 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
     if start is not None:
         history = history.loc[history.snapshot_date.ge(start)]
     _, historical = value_snapshots(subset_snapshots(history, categories, item_id), data["prices"])
+    # Retain the preceding snapshot to explain the first visible change.
+    contributions = explain_changes(subset_snapshots(data["history"], categories, item_id), data["prices"])
+    contributions = contributions.loc[contributions.category.isin(categories)]
+    if start is not None:
+        contributions = contributions.loc[contributions.end_date.ge(start)]
     cohort = data["holdings"].loc[data["holdings"].category.isin(categories)]
     if item_id:
         cohort = cohort.loc[cohort.item_id.eq(item_id)]
@@ -91,13 +96,18 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
     if start is not None:
         transactions = transactions.loc[transactions.date.isna() | transactions.date.ge(start)]
     pnl, pnl_message = pd.DataFrame(), "Gains/pertes indisponibles : inventaire initial absent."
+    sales = pd.DataFrame()
     if components in (None, "performance", "item") and (root / "data/processed/opening_inventory.csv").exists():
         from profit_loss import report
         with contextlib.redirect_stdout(io.StringIO()):
-            pnl = report(root, when=cutoff)["items"]
+            fifo = report(root, when=cutoff)
+            pnl, sales = fifo["items"], fifo["sales"]
         pnl = pnl.loc[pnl.category.isin(categories)]
         if item_id:
             pnl = pnl.loc[pnl.item_id.eq(item_id)]
+        sales = sales.loc[sales.category.isin(categories)]
+        if item_id:
+            sales = sales.loc[sales.item_id.eq(item_id)]
         pnl_message = "FIFO depuis l'inventaire initial jusqu'à la date choisie ; coûts inconnus = N/A, frais de vente futurs non estimés."
     prediction = {key: pd.DataFrame(columns=["category"]) for key in ("audit", "future", "scores")}
     archive = pd.DataFrame(columns=["category"])
@@ -111,7 +121,8 @@ def view(root=ROOT, *, category="all", item_id="", start=None, end=None, now=Non
     return dict(now=now, cutoff=cutoff, historical_mode=historical_mode, categories=categories,
                 registry=registry, detail=detail, current=current, historical=historical,
                 indices=indices, diagnostic=diagnostic, transactions=transactions,
-                pnl=pnl, pnl_message=pnl_message, prediction=prediction, archive=archive, prices=data["prices"], selected_item_id=item_id)
+                pnl=pnl, sales=sales, pnl_message=pnl_message, contributions=contributions,
+                prediction=prediction, archive=archive, prices=data["prices"], selected_item_id=item_id)
 
 
 def table(frame):
@@ -170,7 +181,20 @@ def render(root=ROOT, params=None, now=None):
     performance_body += section("Prix à panier constant", '<p>Cohorte de la sélection actuelle ; poids égaux par objet. Base et couverture ci-dessous. Les trous restent visibles.</p>' +
                     '<p>' + escaped(diagnostic_text) + '</p>' + chart(data["indices"], "date", "index_100", "Indices base 100") + table(data["indices"]))
     performance_body += section("Transactions", '<p>Dates inconnues conservées et signalées ; la période filtre les dates connues.</p>' + table(data["transactions"]))
+    changes = data["contributions"]
+    effects = changes.loc[changes.covered.eq(True)]
+    effect_chart = '<p class="empty">Deux snapshots avec prix et quantités connus sont nécessaires.</p>'
+    if not effects.empty:
+        totals = effects.groupby(["end_date", "category"], as_index=False)[["price_effect", "quantity_effect"]].sum()
+        figure = px.bar(totals, x="end_date", y=["price_effect", "quantity_effect"], facet_col="category", barmode="relative",
+                        title="Contributions couvertes : effets prix et quantités — EUR")
+        effect_chart = figure_html(figure)
+    performance_body += section("Décomposition des variations", '<p>Effet prix = quantité initiale × variation du prix ; effet quantités = variation des quantités × prix final. '
+                                'La date de fin sélectionne les variations ; le snapshot précédent reste utilisé. Les contributions non couvertes restent indisponibles et sont exclues du graphique. '
+                                'Un sous-total couvert ne représente pas nécessairement la variation complète du portefeuille.</p>' + effect_chart + table(changes))
     performance_body += section("Gains et pertes", '<p>' + escaped(data["pnl_message"]) + '</p>' + table(data["pnl"]))
+    performance_body += section("Ventes réalisées et frais", '<p>Résultats cumulés jusqu’à la date de fin, avant le filtre de début. Les produits nets incluent les frais de vente enregistrés. '
+                                'Aucun frais de vente futur n’est estimé. Un coût inconnu ou un écart de réconciliation rend le résultat correspondant indisponible ; les statuts et couvertures restent visibles ci-dessus.</p>' + table(data["sales"]))
     prediction = data["prediction"]
     forecast_body = section("Prévisions expérimentales", '<p>Prévisions de prix de la cohorte sélectionnée, sans signal d’achat/vente ni intervalle de confiance arbitraire. La période de début filtre les graphiques ; l’entraînement utilise tout le passé disponible avant la fin.</p>' +
                     table(prediction["audit"].loc[prediction["audit"].category.isin([*data["categories"], "global"])]) + table(prediction["future"]) + table(prediction["scores"]))
