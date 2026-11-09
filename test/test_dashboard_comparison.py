@@ -28,6 +28,9 @@ class ComparisonTests(unittest.TestCase):
             self.assertEqual(same['delta'],0);self.assertEqual(same['explained'],0)
             before={p:p.read_bytes() for p in root.rglob('*') if p.is_file()}
             self.assertIn('Résidu calculable',render(root,{'page':'comparison','category':'case'},now='2023-04-01'))
+            reset=render(root,{'page':'comparison','category':'case','comparison_before':'2020-01-01','comparison_after':'2023-03-31'},now='2023-04-01')
+            self.assertIn('Choix de snapshots réinitialisé',reset)
+            self.assertNotIn('2020-01-01',reset)
             self.assertEqual(before,{p:p.read_bytes() for p in root.rglob('*') if p.is_file()})
 
     def test_unknown_quantity_and_price_zero_do_not_invent_residual(self):

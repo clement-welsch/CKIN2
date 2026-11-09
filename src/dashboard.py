@@ -252,7 +252,7 @@ def render(root=ROOT, params=None, now=None):
         body = read_dataset(data['errors'], 'community', lambda: community_page(root, data, start_filter, table), '<section><h2>Recherche indisponible</h2><p>Corpus local invalide. Consulter la qualité des données.</p></section>')
     if page == "comparison":
         from dashboard_comparison import comparison_page
-        body = comparison_page(data, params, comparison_before, comparison_after, table)
+        body, comparison_before, comparison_after = comparison_page(data, params, comparison_before, comparison_after, table, with_selection=True)
     if page == "inventory":
         from dashboard_inventory import inventory_page
         body = inventory_page(data, params, inventory_filters)

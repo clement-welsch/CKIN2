@@ -50,7 +50,7 @@ def compare_snapshots(data, before='', after='', start=None):
                 excluded=int((~rows.covered).sum()))
 
 
-def comparison_page(data,params,before,after,table):
+def comparison_page(data,params,before,after,table,*,with_selection=False):
     notice=''
     try:
         result=compare_snapshots(data,before,after,params.get('start'))
@@ -58,10 +58,12 @@ def comparison_page(data,params,before,after,table):
         if not before and not after:raise
         result=compare_snapshots(data,start=params.get('start'))
         notice='<p role="status">Choix de snapshots réinitialisé : dates absentes, obsolètes ou incompatibles avec cette période.</p>'
+    def finish(body):
+        return (body, result['before'].isoformat() if result['before'] is not None else '', result['after'].isoformat() if result['after'] is not None else '') if with_selection else body
     body='<section><h2>Comparer deux états enregistrés</h2><p>Variation de valeur en euros, distincte d’un rendement ou d’un bénéfice réalisé. Les quantités sont celles de chaque snapshot.</p>'
     body+=notice
     if not result['dates']:
-        return body+'<p class="empty">Aucun snapshot disponible pour cette période. Aucun historique de quantités n’est reconstruit.</p></section>'
+        return finish(body+'<p class="empty">Aucun snapshot disponible pour cette période. Aucun historique de quantités n’est reconstruit.</p></section>')
     body+='<form method="get"><input type="hidden" name="page" value="comparison">'
     body+=''.join('<input type="hidden" name="'+k+'" value="'+escape(str(v),quote=True)+'">' for k,v in params.items())
     for name,label in [('comparison_before','État initial'),('comparison_after','État final')]:
@@ -92,4 +94,4 @@ def comparison_page(data,params,before,after,table):
             fact=('Effet prix '+money(row.price_effect)+' ; effet quantité '+money(row.quantity_effect)+'.') if row.covered else 'Non comparable : prix, quantité ou couverture de catégorie manquants.'
             body+='<li><a href="'+target+'">'+escape(row.item_name)+'</a> — '+escape(fact)+'</li>'
         body+='</ul>'
-    return body+'</section>'
+    return finish(body+'</section>')
