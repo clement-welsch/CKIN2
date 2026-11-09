@@ -10,6 +10,19 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Community research dashboard (in review)
+
+Branch: `codex/dashboard-community`. Tracking: #56.
+
+- Reused local research for channel/corpus coverage, dated mentions, annotations,
+  evidence links and common-window model comparisons. No transcript text is shown.
+- Applied temporal and identity filters; future annotations are hidden while
+  collected mentions remain available. Unverified channels and unproven benefit
+  stay explicit. #40's real-corpus validation remains outstanding.
+- All 159 synthetic tests passed, including focused cases with network
+  connections prohibited and fixture bytes unchanged. Whitespace checks passed.
+  Browser visual checks remain unperformed. No personal data writes.
+
 ## 2026-11-09 - Dashboard forecast diagnostics (local review)
 
 Branch: `codex/dashboard-forecasts`. Tracking: #55.

@@ -46,6 +46,21 @@ revision, code and settings. Unemitted records are hidden at historical cutoffs;
 pending/unavailable targets never contribute to scores. Item filters hide
 category archives and their metrics. Viewing never issues or saves a forecast.
 
+## Community research (#56)
+
+The Research view reuses the local `research()` workflow. It shows channel
+verification, video availability/provenance, exact/family/ambiguous mentions,
+annotation availability, creator arguments and separately verified facts.
+Canonical evidence links retain imported subtitle offsets; TXT has no invented
+offset. No transcript text is rendered. External links require an explicit click.
+Signals are bounded by publication and collection dates; future annotations are
+masked. Object/category filters select mentions and experiments, while video
+coverage explicitly remains corpus-wide. Period start filters publications for
+mentions and target dates for backtests after training. Common-window errors
+are recomputed for the displayed targets. There is no network call, corpus
+acquisition or file write on page load. Empty/partial data, unverified channels
+and unproven predictive utility remain explicit; #40 remains experimental.
+
 ## Performance details (#54)
 
 The performance view reuses `explain_changes` for item-level price/quantity

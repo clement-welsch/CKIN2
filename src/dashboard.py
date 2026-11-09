@@ -239,6 +239,10 @@ def render(root=ROOT, params=None, now=None):
                 content += '<p class="empty">Aucun historique de marché disponible.</p>'
             content += "<h3>Références d’acquisition</h3><p>Repères séparés, exclus des prix de marché et des coûts d’achat confirmés.</p>" + table(result["acquisitions"])
             body += section(LABELS[result["category"]], content)
+    if page == "community":
+        from dashboard_community import community_page
+        start_filter = _parse_dates(pd.Series([params["start"]]), "period start").iloc[0] if params.get("start") else None
+        body = community_page(root, data, start_filter, table)
     selected_detail = None
     if page == "item":
         links = "".join('<li><a style="color:#f8b55c" href="/?' +
