@@ -73,6 +73,18 @@ Branch: `codex/dashboard-performance`. Tracking: #54.
   parity, period boundaries, empty data and unchanged fixture files. Initial
   baseline: 153 tests passed. No Steam access or personal data writes.
 
+## 2026-11-09 - Reviewed community extraction evaluation (in review)
+
+Branch: `codex/community-extraction-evaluation`. Relates to #40.
+
+- Added optional manually reviewed passage labels and extraction precision,
+  recall/F1 with sample/extractor/alias provenance. Unreviewed passages do not
+  become negatives; empty denominators remain unavailable.
+- Exposed evaluation in local research and the dashboard without transcript text.
+- All 168 branch tests passed, including three focused tests for false positives/negatives, ambiguous
+  labels, deferred reviews, duplicate predictions and read-only integration.
+  Real annotated-corpus quality and predictive benefit remain unverified.
+
 ## 2026-11-09 - Read-only market release comparison (in review)
 
 Branch: `codex/market-release-comparison`. Relates to #39.
