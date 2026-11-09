@@ -51,6 +51,20 @@ Branch: `codex/dashboard-performance`. Tracking: #54.
   parity, period boundaries, empty data and unchanged fixture files. Initial
   baseline: 153 tests passed. No Steam access or personal data writes.
 
+## 2026-11-09 - Steam history study preparation (in review)
+
+Branch: `codex/steam-history-study`. Relates to #57; does not close it.
+
+- Added an offline, read-only analyzer for one sanitized capture and a wholly
+  synthetic sample. Explicit UTC offsets, exact identities, finite prices,
+  integer volumes, duplicate/future timestamps and empty responses are checked.
+- Documented a bounded manual home-network study: observed authentication,
+  graph parity, currency/time/measure, source access/reuse and go/no-go evidence.
+- All 160 branch tests, three focused study tests and the sample CLI passed;
+  whitespace checks passed. No network access or data writes were performed.
+  Real Steam access/schema/terms remain unverified; verdict pending.
+  #58 must await a positive live study. No historical data are imported.
+
 ## 2026-11-04 - Detailed dashboard item view (in review)
 
 Branch: `codex/dashboard-item-detail`. Tracking: #53. Depends on #52/#51.
