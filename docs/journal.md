@@ -73,6 +73,19 @@ Branch: `codex/dashboard-performance`. Tracking: #54.
   parity, period boundaries, empty data and unchanged fixture files. Initial
   baseline: 153 tests passed. No Steam access or personal data writes.
 
+## 2026-11-09 - Reviewed local skin catalog adapter (in review)
+
+Branch: `codex/local-catalog-import`. Relates to #39 only.
+
+- Added a read-only adapter from a supplied pinned ByMykel skins_not_grouped
+  JSON file and explicit source-ID selection to a validated CKIN2 release proposal.
+- Preserved exact variants/Unicode, recorded source bytes/revision and measured
+  selection coverage relative to the supplied file, without claiming whole-market
+  coverage or authenticating a reviewer's declared upstream revision.
+- All 173 tests passed, including three focused tests for the school CLI, invalid
+  selections/metadata, duplicate identities and unchanged source bytes.
+  No Steam request, publication, inventory or personal notebook change.
+
 ## 2026-11-09 - Reviewed community extraction evaluation (in review)
 
 Branch: `codex/community-extraction-evaluation`. Relates to #40.
