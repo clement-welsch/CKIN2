@@ -10,6 +10,30 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Data quality and combined dashboard verification (in review)
+
+Branch: `codex/dashboard-data-quality`. Tracking: #85; stacked on #82.
+Added scoped quantity/price/category/import diagnostics with concrete repair
+procedures and latest local scheduler success/partial/failure/absent history.
+Shared statuses keep the summary and inventory consistent. Invalid optional
+snapshots, metadata, corpus, visible capture, archive, transaction or FIFO inputs
+leave independent views accessible; invalid primary prices/quantities block their
+dependent calculations without fallback totals. Shared analysis remains strict
+by default. Explicit observation identities avoid unnecessary metadata dependency.
+
+All **207 synthetic tests passed**, including five new diagnostic cases and
+14 total new tests across #80/#81/#82/#85. Existing notebook calculations and HTTP
+checks passed. Dependency and whitespace checks passed on Linux CPython 3.12.14.
+Chromium checks passed at 1440px and 390px for the four views, search, combined
+filters, paging, exact-variant navigation, account subsets and keyboard focus.
+No page errors, horizontal document overflow or fixture changes; external
+requests were blocked. Screenshots use synthetic holdings only. No personal
+inventory was collected or modified. Remote branch CI follows publication.
+
+The preceding #89 Windows path-test expectation was corrected to compare resolved
+paths; its Linux and Windows CI now pass. No merge was performed. Review branches
+remain stacked on that shared-data prerequisite, in feature order.
+
 ## 2026-11-09 - Interactive held inventory table (in review)
 
 Branch: `codex/dashboard-inventory`. Tracking: #82; stacked on #81.

@@ -28,9 +28,13 @@ def overview(data, params):
     body += '<p class="coverage"><b>' + status['label'] + '</b></p><div class="cards">'
     body += card(total_label, money(status['total_value']))
     body += card('Sous-total connu · peut être partiel', money(status['known_value']))
-    body += card('Objets distincts détenus ou de quantité inconnue', status['held_items']) + '</div>'
-    body += '<p>Quantités renseignées : ' + str(status['known_quantities']) + '/' + str(status['held_items'])
-    body += ' objets · prix disponibles : ' + str(status['priced_items']) + '/' + str(status['held_items']) + ' objets.</p>'
+    quantity_unavailable = ('holdings' in data.get('errors', {}) and not data['historical_mode']) or ('history' in data.get('errors', {}) and data['historical_mode'])
+    body += card('Objets distincts détenus ou de quantité inconnue', 'Indisponible' if quantity_unavailable else status['held_items']) + '</div>'
+    if quantity_unavailable:
+        body += '<p>Quantités et couverture : indisponibles tant que la source est invalide.</p>'
+    else:
+        body += '<p>Quantités renseignées : ' + str(status['known_quantities']) + '/' + str(status['held_items'])
+        body += ' objets · prix disponibles : ' + str(status['priced_items']) + '/' + str(status['held_items']) + ' objets.</p>'
     body += '<p>Catégories non importées : ' + str(status['missing_categories']) + ' · prix anciens : ' + str(status['stale_items'])
     body += f' (plus de {STALE_DAYS} jours à la date d’analyse).</p>'
     provenance = data['provenance']
@@ -45,5 +49,5 @@ def overview(data, params):
         body += '<p>Quantités du dernier snapshot enregistré avant la fin de période. Aucun patrimoine actuel projeté dans le passé.</p>'
     else:
         body += '<p>Le patrimoine connu inclut les quantités conservées localement. Une observation publique visible ne prouve pas le patrimoine complet.</p>'
-    body += '<p>' + link('inventory', 'Consulter l’inventaire détenu') + ' · ' + link('categories', 'Voir les catégories et leur couverture') + ' · ' + link('item', 'Consulter un objet') + '</p></section>'
+    body += '<p>' + link('inventory', 'Consulter l’inventaire détenu') + ' · ' + link('categories', 'Voir les catégories et leur couverture') + ' · ' + link('item', 'Consulter un objet') + ' · ' + link('quality', 'Vérifier la qualité des données') + '</p></section>'
     return body

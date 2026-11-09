@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 import pandas as pd
 
 from dashboard_categories import LABELS
+from data_diagnostics import unavailable_valuation
 from dashboard_overview import money, stamp
 from dashboard_status import PRICE_LABELS, held_rows
 from global_snapshots import COLUMNS, value_snapshots
@@ -17,12 +18,12 @@ SORTS = {'item_name':'Nom', 'category':'Catégorie', 'quantity':'Quantité', 'un
 
 
 def inventory(data, *, search='', sort='item_name', direction='asc', price_status='all', quantity_status='all', page_number='1', page_size='25'):
-    if sort not in SORTS or direction not in ('asc','desc') or price_status not in ('all','recent','stale','missing') or quantity_status not in ('all','known','unknown'):
+    if sort not in SORTS or direction not in ('asc','desc') or price_status not in ('all','recent','stale','missing','invalid') or quantity_status not in ('all','known','unknown'):
         raise ValueError('Invalid inventory filter/sort')
     if not str(page_number).isdigit() or not str(page_size).isdigit() or int(page_number)<1 or int(page_size) not in (10,25,50,100):
         raise ValueError('Invalid inventory pagination')
     size=int(page_size)
-    rows=held_rows(data['detail'], data['cutoff'])
+    rows=held_rows(data['detail'], data['cutoff'], data.get('errors'))
     search=search.strip()
     if search:
         rows=rows.loc[rows.item_name.str.contains(search, case=False, regex=False)]
@@ -42,6 +43,8 @@ def inventory(data, *, search='', sort='item_name', direction='asc', price_statu
                  for c in CATEGORIES if c not in set(snapshot.category)]
         snapshot=pd.concat([snapshot,pd.DataFrame(markers,columns=COLUMNS)],ignore_index=True)
     _, totals=value_snapshots(snapshot,data['prices'])
+    if 'prices' in data.get('errors', {}):
+        _, totals = unavailable_valuation(snapshot, totals)
     summary=totals.loc[totals.category.eq('global')]
     pages=max(1,ceil(len(rows)/size))
     page=min(int(page_number),pages)
@@ -51,6 +54,8 @@ def inventory(data, *, search='', sort='item_name', direction='asc', price_statu
 
 
 def inventory_page(data, params, filters):
+    if ('holdings' in data.get('errors', {}) and not data['historical_mode']) or ('history' in data.get('errors', {}) and data['historical_mode']):
+        return '<section><h2>Inventaire détenu</h2><p>Quantités indisponibles : source invalide. <a href="/?page=quality">Vérifier les données</a>.</p></section>'
     result=inventory(data,**filters)
     def url(**changes):
         return '/?'+escape(urlencode({**params,**filters,'page':'inventory',**changes}),quote=True)
@@ -67,6 +72,8 @@ def inventory_page(data, params, filters):
     values=result['summary'].iloc[0] if not result['summary'].empty else {}
     body+='<p><b>'+str(result['count'])+' objets sur la sélection complète</b> · '+('Filtres actifs' if result['active'] else 'Aucun filtre de sélection')+'</p>'
     body+='<p>Valeur totale de la sélection : '+money(values.get('total_value',float('nan')))+' · sous-total connu, potentiellement partiel : '+money(values.get('known_value',float('nan')))+'. Totaux indépendants de la pagination.</p>'
+    if ('holdings' in data.get('errors', {}) and not data['historical_mode']) or ('history' in data.get('errors', {}) and data['historical_mode']):
+        return body+'<p class="empty">Inventaire indisponible : les données invalides doivent être corrigées.</p></section>'
     if result['page_rows'].empty:
         body+='<p class="empty">Aucun objet détenu ne correspond à cette sélection.</p>'
     else:

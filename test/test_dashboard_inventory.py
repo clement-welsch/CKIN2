@@ -8,6 +8,7 @@ import pandas as pd
 from dashboard import render, view
 from dashboard_inventory import inventory
 from portfolio_data import identity, load_holdings
+from update_market_prices import catalog_template
 from test_global_analysis import market_fixture
 
 
@@ -19,6 +20,10 @@ def inventory_fixture(root):
     prices=market_fixture(holdings).loc[lambda f:f.item_name.ne('Case 02')]
     prices.loc[prices.item_name.eq('Case 03'),'date']='2022-01-01'
     prices.to_csv(directory/'market_observations.csv',index=False)
+    watched=holdings.iloc[:1].copy()
+    watched['item_name']='Tracked only'
+    watched['item_id']=identity('case','Tracked only')
+    catalog_template(watched).to_csv(directory/'market_catalog.csv',index=False)
     return holdings
 
 
@@ -30,6 +35,8 @@ class InventoryTests(unittest.TestCase):
             first=inventory(data,page_size='10')
             second=inventory(data,page_size='10',page_number='2')
             self.assertEqual(first['count'],30)
+            self.assertIn('Tracked only',data['registry'].item_name.tolist())
+            self.assertNotIn('Tracked only',first['rows'].item_name.tolist())
             self.assertFalse(set(first['page_rows'].item_id)&set(second['page_rows'].item_id))
             pd.testing.assert_frame_equal(first['summary'],second['summary'])
             self.assertTrue(pd.isna(first['summary'].total_value.iloc[0]))
