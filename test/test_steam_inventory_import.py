@@ -24,6 +24,27 @@ def catalog_fixture():
 
 
 class SteamInventoryImportTests(unittest.TestCase):
+    def test_account_breakdown_preserves_empty_unknown_and_duplicate_assets(self):
+        first, second, empty = export_fixture(), export_fixture(), export_fixture()
+        second['account_id'] = 'unknown'
+        second['pages'][0]['descriptions'][0]['market_hash_name'] = 'Unknown listing'
+        first['pages'][0]['assets'] *= 2
+        empty['account_id'] = 'empty'
+        empty['pages'][0].update(assets=[], descriptions=[])
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = dict(schema=2, complete=True, accounts=[first, second, empty])
+            result = preview(bundle, catalog_fixture(), Path(directory))
+            accounts = {row['account_id']: row for row in result['accounts']}
+            self.assertEqual(accounts['synthetic']['asset_count'], 1)
+            self.assertEqual(accounts['synthetic']['matched_quantity'], 2)
+            self.assertEqual(accounts['unknown']['unresolved_quantity'], 2)
+            self.assertEqual(accounts['unknown']['unresolved'], ['Unknown listing'])
+            self.assertEqual(accounts['empty']['total_quantity'], 0)
+            self.assertEqual(accounts['empty']['holdings'], [])
+            self.assertEqual(sum(row['matched_quantity'] for row in accounts.values()),
+                             sum(row['quantity'] for row in result['holdings']))
+            self.assertFalse(list(Path(directory).rglob('*')))
+
     def test_missing_identity_fields_cannot_match_each_other_or_modify_inventory(self):
         for field in ("classid", "instanceid"):
             for invalid in (None, "", "None", "²", 10):
