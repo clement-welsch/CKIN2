@@ -78,3 +78,40 @@ quantities. Old identities remain in their original releases and observations.
 Review proposed identity changes before preparing a new watchlist. This does not
 measure whole-market coverage or download/expand an upstream catalog; #39's real
 catalog acquisition and coverage assessment remain separate work.
+
+## Prepare a local ByMykel skin import (#39)
+
+The initial adapter accepts the English `public/api/en/skins_not_grouped.json`
+array from a declared pinned commit. Its id, market_hash_name, wear, weapon,
+stattrak and souvenir fields were inspected at reference revision
+`b014e92bc37f4143ead2cb1af26aa85f2c3d6688`. This observation does not guarantee
+future schema compatibility. Source downloads and revision verification remain
+explicit reviewer actions, independent of Steam collection.
+
+```powershell
+python src/catalog_import.py school --source data/market/source-skins.json --selection data/market/reviewed-ids.json --revision EXACT_40_CHARACTER_COMMIT --source-updated-at 2026-11-01 --collected-at 2026-11-09
+```
+
+The selection is a nonempty JSON array of exact source variant IDs. The command
+only reads files and prints a proposal containing `release`, `release_id` and
+`coverage`. It never downloads, publishes or edits holdings/prices. Extract the
+reviewed `release` object for the existing explicit home publication workflow;
+the outer proposal is not itself a publishable release.
+
+Weapon/glove skin records retain the exact market listing as their CKIN2 name,
+including wear and variant characters. Souvenir variants map to `souvenir`,
+others to `skin`. No combinations or translated names are synthesized. This
+does not merge these independent catalog identities into differently named
+personal inventory rows. Collection membership is left unavailable by this
+adapter; source descriptions, images, float and pattern premiums are omitted.
+
+Unknown/duplicate selected IDs, missing wear/listings, invalid variant flags and
+duplicate catalog identities fail. UTF-8 files and ASCII-escaped JSON stdout
+preserve Unicode across Windows consoles. Source bytes are fingerprinted with
+SHA-256; the declared commit and timestamps must still be checked by the reviewer
+against the actual downloaded revision. A checksum is not proof of source origin.
+
+Coverage reports supplied source record count and selected/unselected counts.
+It is a fraction of that file, not Steam market completeness, tradability,
+availability or successful pricing coverage. No real catalog release or price
+collection is bundled in this delivery. Required ByMykel notices remain in force.
