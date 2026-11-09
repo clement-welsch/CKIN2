@@ -14,6 +14,11 @@ the journal.
 
 Branch: `codex/dashboard-forecasts`. Tracking: #55.
 
+Review: [#65](https://github.com/clement-welsch/CKIN2/pull/65), stacked on
+[#64](https://github.com/clement-welsch/CKIN2/pull/64) (#54) to resolve shared
+dashboard fields before integration. Final combined suite: **157 tests passed**;
+whitespace checks passed. Visual browser checks remain unperformed.
+
 - Added predicted/actual plots and common-window MAE/RMSE using shared past-only
   experiments. Period start filters targets after training, then recomputes scores.
 - Exposed monthly freshness, training details and immutable archive metrics,
@@ -21,6 +26,17 @@ Branch: `codex/dashboard-forecasts`. Tracking: #55.
 - Validation: two focused synthetic tests passed for shared-calculation parity,
   empty/short history, zero targets, period/category/item filters, archive metrics,
   future-data exclusion and unchanged files. No Steam call or forecast issuance.
+
+## 2026-11-09 - Dashboard performance details (local review)
+
+Branch: `codex/dashboard-performance`. Tracking: #54.
+
+- Exposed shared price/quantity contributions with period and identity filters,
+  preserving the preceding snapshot and explicit incomplete coverage.
+- Added cumulative FIFO sale details with recorded net proceeds and cost limits.
+- Validation: two focused synthetic tests passed, including shared-calculation
+  parity, period boundaries, empty data and unchanged fixture files. Initial
+  baseline: 153 tests passed. No Steam access or personal data writes.
 
 ## 2026-11-04 - Detailed dashboard item view (in review)
 

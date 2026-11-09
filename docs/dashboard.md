@@ -45,3 +45,14 @@ Archive metrics remain grouped by issued/retrospective kind, frozen basket,
 revision, code and settings. Unemitted records are hidden at historical cutoffs;
 pending/unavailable targets never contribute to scores. Item filters hide
 category archives and their metrics. Viewing never issues or saves a forecast.
+
+## Performance details (#54)
+
+The performance view reuses `explain_changes` for item-level price/quantity
+contributions. Period start selects interval end dates while retaining the
+preceding snapshot. Category and exact-item filters apply before calculation.
+Charts sum only covered contributions; the detailed table retains unavailable
+rows, so a covered subtotal is never presented as a complete portfolio change.
+FIFO item results and realized sales are cumulative through the selected end,
+independent of period start. Net proceeds include recorded sale fees; unknown
+costs and reconciliation failures remain unavailable. No future fee is inferred.
