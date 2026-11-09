@@ -10,6 +10,16 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-09 - Steam export identity validation (in review)
+
+Branch: `codex/steam-export-validation`. Relates to #38.
+
+- Rejected missing/malformed class and instance IDs before matching. Previously
+  a missing value on both asset and description could match as the string None.
+- Rejected cursor cycles, malformed page/asset records and invalid success types.
+- Six focused import tests passed, including unchanged temporary directories
+  after rejected previews. No Steam calls or personal inventory writes.
+
 ## 2026-11-09 - Explicit multi-account inventory preview (in review)
 
 Branch: `codex/steam-inventory-multi-account`. Relates to #38.

@@ -24,6 +24,36 @@ def catalog_fixture():
 
 
 class SteamInventoryImportTests(unittest.TestCase):
+    def test_missing_identity_fields_cannot_match_each_other_or_modify_inventory(self):
+        for field in ("classid", "instanceid"):
+            for invalid in (None, "", "None", "²", 10):
+                with self.subTest(field=field, invalid=invalid), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    export = export_fixture()
+                    page = export["pages"][0]
+                    page["assets"][0][field] = invalid
+                    page["descriptions"][0][field] = invalid
+                    with self.assertRaises(ValueError):
+                        preview(export, catalog_fixture(), root)
+                    self.assertFalse(list(root.rglob("*")))
+
+    def test_repeated_cursors_and_malformed_pages_are_rejected(self):
+        export = export_fixture()
+        first = export["pages"][0]
+        first.update(more_items=1, last_assetid="1")
+        middle = copy.deepcopy(first)
+        middle["start_assetid"] = "1"
+        final = copy.deepcopy(middle)
+        final["more_items"] = 0
+        export["pages"].extend([middle, final])
+        with self.assertRaisesRegex(ValueError, "Repeated"):
+            parse_export(export)
+        for page in (None, [], dict(success=True), dict(success=0)):
+            broken = export_fixture()
+            broken["pages"] = [page]
+            with self.assertRaises(ValueError):
+                parse_export(broken)
+
     def test_multi_account_preview_scopes_assets_and_rejects_partial_or_changed_scope(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
