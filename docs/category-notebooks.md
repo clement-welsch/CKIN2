@@ -57,16 +57,61 @@ Use these notebooks:
 
 | Notebook | Scope |
 | --- | --- |
-| `notebook/cases_book.ipynb` | Drop cases, including existing inventory snapshots |
+| `notebook/cases_book.ipynb` | Drop cases, including recorded global snapshots |
 | `notebook/skins_book.ipynb` | Weapon skins and gloves |
 | `notebook/souvenirs_book.ipynb` | Souvenir packages identified by tournament and map |
 | `notebook/others_book.ipynb` | Stickers, charms and agents |
 
 Acquisitions appear as separate markers and a timeline. Only market rows feed
 indices, price coverage and inventory valuation. Estimated market dates appear
-in hover details. Missing quantities keep complete totals unavailable. New
-categories have no reconstructed historical quantity snapshots. Purchase costs
-remain distinct from market reference values.
+in hover details. Missing quantities keep complete totals unavailable. Historical quantities come
+only from recorded global snapshots; no category history is reconstructed from
+current holdings. Purchase costs remain distinct from market reference values.
+
+## Shared portfolio contract (#78)
+
+All four category notebooks use `notebook_data.category_report`: the same
+`load_holdings`, `load_prices`, snapshot valuation, selection and category price
+normalization as the dashboard. Recent `market_observations.csv` rows are included;
+`source_column=0` references are displayed separately. Exact identities preserve
+wear, StatTrak and Souvenir variants; a catalog/watchlist entry creates no quantity.
+The cases fixed-basket index now uses the held cohort and shared freshness rules,
+rather than every identity ever seen in its price file.
+
+`CKIN2_DATA_ROOT` selects the data root independently of the code checkout.
+`CKIN2_AS_OF` fixes a timezone-naive analysis timestamp, for example in PowerShell:
+
+```powershell
+$env:CKIN2_DATA_ROOT = "C:\local\CKIN2"
+$env:CKIN2_AS_OF = "2026-11-09 12:00:00"
+```
+
+The date defaults to now. In category notebooks `HISTORICAL=False` means **current
+known quantities**, priced only with observations available at that date. It is
+not a claim that today's quantities existed at a past date. Set `HISTORICAL=True`
+to select the last recorded global snapshot at or before `AS_OF`, matching the
+dashboard's historical end-date behavior. Dashboard end dates include the entire
+day, so compare with `AS_OF="YYYY-MM-DD 23:59:59.999999999"`. No prior snapshot
+means an unavailable historical total, not today's inventory. Each historical
+curve independently keeps its own snapshot quantities. The legacy case-only
+history CSV is not silently combined with the six-category snapshot contract;
+use the global snapshot workflow for these reports.
+
+An explicitly full-portfolio owner override supplies the current holdings.
+Cached public visible observations never change those quantities. Notebook and
+dashboard report owner-declared, unverified legacy-override or manual-CSV
+provenance. CSV capture dates remain unknown; file modification time is not used
+as evidence. Declared CSV purchase references remain available for CSV holdings,
+but are not carried into owner replacements or historical lots without evidence.
+FIFO remains the separate source for documented lot costs and gains/losses.
+
+Global, prediction and research notebooks also print their data root, analysis
+date and scope. Global uses the shared portfolio analyzer; prediction keeps its
+current fixed cohort and existing archive-aware price loader, while research
+uses the independent market universe, not portfolio quantities. Prediction
+models and forecast/archive contracts are unchanged. Reading notebooks never
+collects prices or writes inventories. Synthetic tests execute every category
+notebook on complete, partial and empty fixtures, plus the owner replacement case.
 
 ## Before committing
 
