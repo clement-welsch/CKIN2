@@ -106,3 +106,40 @@ class BrowserAcceptanceTests(unittest.TestCase):
         self.assertTrue(denied.locator('#favorite-save').is_disabled())
         self.assertIn('Stockage local indisponible',denied.locator('#favorite-status').inner_text())
         self.assertEqual(denied.get_by_role('heading',level=1).inner_text(),'Mon portefeuille CS2')
+
+    def test_inventory_pagination_combined_filters_and_keyboard_on_mobile(self):
+        from playwright.sync_api import expect
+        for width in (1440, 390):
+            with self.subTest(width=width):
+                context=self.context(viewport={'width':width,'height':844})
+                page=context.new_page()
+                page.goto(self.url+'/?page=inventory&category=case&page_size=10',wait_until='networkidle')
+                table=page.get_by_role('table',name='Objets détenus · identités exactes et couverture')
+                expect(table.locator('tbody tr')).to_have_count(10)
+                first_names=table.locator('tbody tr td:first-child').all_text_contents()
+                subtotal=page.locator('p').filter(has_text='Valeur totale de la sélection :').inner_text()
+                page.get_by_role('navigation',name='Pagination inventaire').get_by_role('link',name='Suivante').click()
+                expect(page.get_by_text('Page 2 / 3',exact=True)).to_be_visible()
+                self.assertFalse(set(first_names)&set(table.locator('tbody tr td:first-child').all_text_contents()))
+                self.assertEqual(subtotal,page.locator('p').filter(has_text='Valeur totale de la sélection :').inner_text())
+                # Submitting changed filters must reset the page and preserve scope.
+                page.get_by_label('Prix',exact=True).select_option('missing')
+                page.get_by_label('Quantités',exact=True).select_option('known')
+                search=page.get_by_label('Rechercher un nom ou une variante')
+                search.fill('case 02')
+                search.focus()
+                page.keyboard.press('Enter')
+                expect(table.locator('tbody tr')).to_have_count(1)
+                expect(table.get_by_role('link',name='Case 02',exact=True)).to_be_visible()
+                expect(page.get_by_text('Page 1 / 1',exact=True)).to_be_visible()
+                self.assertIn('category=case',page.url)
+                self.assertIn('Filtres actifs',page.inner_text('body'))
+                # Exact-object navigation and browser back keep the filtered view usable.
+                table.get_by_role('link',name='Case 02',exact=True).click()
+                self.assertIn('page=item',page.url)
+                page.go_back(wait_until='networkidle')
+                expect(table.locator('tbody tr')).to_have_count(1)
+                search.fill('[no matching object]')
+                search.press('Enter')
+                expect(page.get_by_text('Aucun objet détenu ne correspond à cette sélection.',exact=True)).to_be_visible()
+                self.assertTrue(page.evaluate('document.documentElement.scrollWidth<=innerWidth'))

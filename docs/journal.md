@@ -10,6 +10,29 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-10 - Held inventory acceptance follow-up (#82, PR #94)
+
+Reused the inventory implementation already present in `codex/remaining-issues`
+rather than introducing a second implementation. Added an optional real-browser
+scenario at 1440px and 390px covering pagination, unchanged full-selection
+totals, combined missing-price/known-quantity/literal-name filters, page reset,
+keyboard submission, exact-object navigation, browser back and empty results.
+The existing browser fixture guard checks that portfolio files remain unchanged.
+
+The three focused inventory calculation/rendering tests passed with pinned
+direct dependencies on Linux CPython 3.12.14. The existing PR head also passed
+Windows and Linux GitHub Actions before this test-only follow-up. Chromium was
+actually attempted here but failed at startup because the executor denies its
+process-singleton Unix socket (`socket()`, `EPERM`). The new browser scenario is
+therefore **not verified in this executor**; the full functional suite is run
+with the browser class explicitly skipped for that reason. No production code,
+personal holdings or collected prices changed in this follow-up.
+
+Full local result: **223 tests passed, 3 browser tests skipped** (226 discovered,
+179.546 seconds). Dependency compatibility, Python compilation of the added
+scenario and `git diff --check` passed. This result does not claim execution of
+the newly added browser scenario.
+
 ## 2026-11-09 - Remaining issues and direct-develop integration (in review)
 
 Branch: `codex/remaining-issues`; targets `develop` directly. This branch combines
