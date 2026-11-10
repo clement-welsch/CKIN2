@@ -4,9 +4,9 @@
 |---|---|
 | Source / author | ByMykel / CSGO-API |
 | Repository | https://github.com/ByMykel/CSGO-API |
-| Reference revision | b014e92bc37f4143ead2cb1af26aa85f2c3d6688 |
+| Reference revision | c52da3543f4cb57958d1e5c1847e6b692c02af4c |
 | License reviewed | MIT, Copyright (c) 2023 ByMykel |
-| Review date | 2026-11-04 |
+| Review date | 2026-11-09 |
 | Intended inputs | English item identities / exact market listing metadata; skins_not_grouped.json or category-specific JSON selected and reviewed locally |
 | Current integration | Optional reviewed local releases, not an automatic API call; no upstream catalog, code or images bundled |
 | Local provenance | data/market/releases/*.json: source_url, source_revision, source_updated_at, collected_at, scope, source_id and exact variant metadata |
@@ -50,3 +50,10 @@ without exposing item names or quantities and marks unreviewed revisions.
 6. Check the Sources and licenses page works offline and still displays the
    correct upstream author and reference. Source changes require this check in
    PR review. This is an engineering record, not blanket legal clearance.
+
+## Real-source follow-up (2026-11-09)
+
+The pinned live source, byte-identical license, finite three-variant selection
+and measured outcomes are recorded in [the catalog study](studies/2026-11-09-catalog-live.md).
+The prior b014e92 license reference remains recognized by the Sources page.
+Image use has a separate [no-go decision](images-feasibility.md); no art was imported.

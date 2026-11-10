@@ -1,17 +1,38 @@
 # Steam history feasibility study (#57)
 
-## Current decision: pending live validation
+## Current decision: no-go for anonymous history retrieval; graph validation remains pending
 
-Development was performed at M2I in `school` mode. No Steam page, internal
-endpoint, authentication or terms were accessed or tested. **There is no live
-go/no-go result.** #57 remains open and #58 must not start importing/backfilling
-real history until the access study is positive. Existing price observations,
-quantity snapshots and collectors are unchanged.
+A bounded real access study was performed on 2026-11-09 from the managed cloud
+network with enforced unrestricted HTTP policy. It was not a claim to be running
+inside the user's home network or a signed-in personal Steam browser. There
+were two manually invoked public reads, no retries, no credentials and no bypass.
+See [the recorded request metadata](studies/2026-11-09-access-report.json).
 
-The included JSON is entirely synthetic. Its price triples, English month names,
-hour/offset syntax, volume grouping and EUR/currency=3 mapping are an explicit
-working hypothesis to compare with a real capture, not a supported Steam API
-contract. Even successful offline parsing proves neither access nor reuse rights.
+The exact `Recoil Case` listing returned HTTP 200 and title
+`Recoil Case - Steam Community Market`. Steam redirected its listing URL to
+`/market/listings/730/G18EE253004`; the requested human listing name alone must
+not be treated as a permanent final URL. No supported inline `var line1` series
+was found by that bounded extraction check. This does not prove that every
+possible page representation lacks history.
+
+The candidate `pricehistory` request for app 730, exact name and currency=3
+returned **HTTP 400**, JSON content type, gzip body decoding to `[]`. No successful
+price series was obtained. This is not evidence of zero sales or proof of a
+particular authentication requirement. Login/session behavior was not tested.
+There were no points to compare with the rendered graph; depth, aggregation,
+volume, raw/display timezone and median-sales interpretation remain unverified.
+
+The [Steam agreement](https://store.steampowered.com/subscriber_agreement/)
+was reviewed, including automation restrictions; an HTTP response is not a
+permission or a guaranteed public API contract. **No automatic backfill/import is
+enabled.** A positive go still requires an authorized acquisition method,
+sanitary capture, exact identity/currency and three graph comparisons below.
+#57 therefore retains those external validation blockers. The offline analyzer
+and synthetic fixtures do not become a positive live result.
+
+The synthetic triples, English month names, offset syntax, volume grouping and
+EUR/currency=3 mapping remain hypotheses for a successful capture. Existing
+listing-minimum observations and quantity snapshots are unchanged.
 
 ## Offline preparation
 

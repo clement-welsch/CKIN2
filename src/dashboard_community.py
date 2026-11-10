@@ -15,6 +15,13 @@ def community_page(root, data, start, table):
     content += 'Les opinions ne constituent ni des faits vérifiés ni des conseils d’achat/vente. '
     content += 'Aucune acquisition de transcription ou requête réseau au chargement. Les transcriptions intégrales ne sont pas affichées.</p>'
     content += '<p>' + html.escape(result['status']) + '</p>'
+    from community_readiness import readiness
+    ready = readiness(root, data['cutoff'], research_result=result)
+    labels = {'authorized_corpus': 'Corpus et méthode d’acquisition autorisés', 'eligible_transcripts': 'Transcriptions datées disponibles', 'reviewed_extraction': 'Échantillon d’extraction relu', 'common_window_evaluation': 'Comparaison chronologique aux mêmes dates', 'valid_inputs': 'Données valides'}
+    content += '<h3>Pré-requis de l’étude réelle</h3>' + table(pd.DataFrame([
+        {'Condition': ('Identité de chaîne : ' + r['requirement'][8:] if r['requirement'].startswith('channel:') else labels[r['requirement']]),
+         'État': 'Disponible pour revue' if r['ready'] else 'À compléter'} for r in ready['checks']]))
+    content += '<p>La disponibilité pour revue ne prouve pas une amélioration prédictive ni une causalité.</p>'
     content += '<h3>Qualité de l’extraction sur échantillon annoté</h3>'
     if result['evaluation'] is None:
         content += '<p>Aucun échantillon annoté disponible : précision et rappel non mesurés.</p>'

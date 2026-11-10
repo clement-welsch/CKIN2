@@ -22,6 +22,13 @@ including owner replacements and recent observations. `CKIN2_DATA_ROOT` and
 `CKIN2_AS_OF` make notebook scope and analysis time explicit; historical mode
 uses recorded snapshot quantities.
 
+The [remaining-issue audit](docs/remaining-issues-status.md) records direct-develop
+integration, [readable notebook reports](docs/notebook-reports.md),
+[two-snapshot comparison](docs/snapshot-comparison.md), and
+[compatible filters/browser favorites](docs/dashboard-navigation.md). Real-source
+catalog measurements, image feasibility and Steam-history limits are documented;
+a missing authorized corpus or successful graph capture is not a completed study.
+
 **CKIN2** is a personal project designed to track and analyze my **Counter-Strike 2 skin inventory**.
 
 The goal is to centralize my inventory data, maintain a historical record of its value, and progressively develop analysis tools to better understand the evolution of my skin portfolio.

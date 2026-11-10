@@ -86,3 +86,89 @@ rows, so a covered subtotal is never presented as a complete portfolio change.
 FIFO item results and realized sales are cumulative through the selected end,
 independent of period start. Net proceeds include recorded sale fees; unknown
 costs and reconciliation failures remain unavailable. No future fee is inferred.
+
+## Compact portfolio summary (#80)
+
+The landing page presents shared total/known values, held distinct identities,
+quantity/price coverage, missing categories and old prices. Zero positions do not
+count as holdings; unknown quantities remain visible. Prices older than 45 days
+at the analysis cutoff are labeled old without silently dropping their known
+valuation. Quantity provenance/date, price date range and recorded snapshot date
+are separate. Historical selection never reuses current quantities. Legacy
+owner overrides remain labeled unverified. Detailed tables remain in category
+and exact-object views rather than the landing page.
+
+## Known versus visible Steam inventory (#81)
+
+The reconciliation page reads only `steam_inventory_visible.json`'s latest
+explicit account selection, validates per-account dates/identities and aggregate
+quantities, and compares it with the selected known portfolio. Choose all selected
+accounts or one account; omitted cached accounts never contribute quantities.
+Missing visible rows stay unknown, including empty captures and stored items.
+Dates, source, unresolved mappings and omitted accounts remain visible. Capture
+skew and transfer risks are explained without inferring a transfer, sale or
+storage location. Future captures are unavailable in historical views; audit
+files are not silently replayed. The page never applies adjustments or collects.
+
+## Held inventory table (#82)
+
+The Inventory view lists positive or unknown owned quantities only, keeping exact
+variant names and exact-identity detail links. Literal case-insensitive search,
+category/object filters, known/unknown quantities and recent/old/missing prices
+combine before stable sorting (missing values last) and pagination. Page sizes
+are 10/25/50/100; out-of-range pages clamp to the last page. Shared snapshot
+valuation computes totals for the entire filtered selection, independent of the
+page. Missing category coverage remains explicit; unknown amounts never become
+zero. Controls and pagination use ordinary keyboard-accessible forms and links.
+
+## Data-quality centre and invalid datasets (#85)
+
+The Quality view shares held-row price/quantity statuses with the landing page
+and inventory. It groups unknown quantities, missing/old/invalid prices,
+unimported categories, unverified legacy replacements and unresolved visible
+Steam mappings. Every diagnostic includes its affected scope, impact and a
+manual correction procedure. It never resets quantities, repairs files or
+collects prices. The landing page links to these diagnostics; its filters fold
+away initially to keep the current summary visible on mobile.
+
+The latest valid-by-schema local scheduled result is selected by its recorded
+end timestamp (UTC comparison), not filename or mtime. Success, partial result,
+failure and no history are distinct. A malformed runtime record makes that
+history unverifiable instead of claiming an earlier success. Future records
+are not displayed at an earlier analysis cutoff. Collector stale counts retain
+the collector's own policy; they are not relabeled as dashboard selection counts.
+Unscheduled commands without persisted run records cannot supply this history.
+
+Dashboard reads isolate rejected datasets: invalid snapshots block historical
+selection but leave current quantities available; invalid archives, metadata,
+corpora, visible captures, transactions or FIFO inputs block their dependent
+components. Rejected portfolio prices never become fallback/zero valuations.
+Missing quantities stay unavailable when inventory validation fails. Explicit
+market observations do not depend on an optional catalog unless legacy others
+price classification requires it. A visible error identifies the rejected dataset
+and links to correction procedures. Core `analyze()` and notebooks remain strict
+by default; the dashboard opts into diagnosed partial reads and retains the
+same underlying validators. No invalid rows are silently accepted or rewritten.
+
+Combined verification: 207 synthetic tests on Linux CPython 3.12.14, dependency
+compatibility and whitespace checks passed. Chromium desktop and 390px mobile
+checks exercised summary, inventory paging/search/filter, exact identity links,
+account selection, quality results and keyboard focus. No page errors, document
+horizontal overflow, external network requests or fixture-byte changes occurred.
+Screenshots contain synthetic data only. Remote CI validates the supported
+Python version on Windows and Linux for the published review branches.
+
+## Reading reports, snapshot comparison and favorites
+
+The [two-snapshot comparison](snapshot-comparison.md) selects exact recorded
+states and retains covered effects, exclusions and unavailable residuals.
+[Navigation and browser favorites](dashboard-navigation.md) preserve compatible
+URL filters, show resets, resolve preset/custom periods and save preferences
+only in the browser. The independent `/reconciliation` route remains available;
+the integrated Rapprochement view additionally supports scoped/historical cutoffs.
+
+The seven [notebook reading reports](notebook-reports.md) lead with summaries and
+keep detailed checks in appendices. The [remaining-issue audit](remaining-issues-status.md)
+separates delivered features, bounded real-source measurements and external
+validation blockers. Item imagery has a documented [no-go decision](images-feasibility.md)
+with no page-load image requests. Research shows its dated corpus prerequisites.

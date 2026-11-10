@@ -1,0 +1,46 @@
+{
+  "steam_listing": {
+    "url": "https://steamcommunity.com/market/listings/730/Recoil%20Case?l=english&currency=3",
+    "final_url": "https://steamcommunity.com/market/listings/730/G18EE253004?l=english&currency=3",
+    "status": 200,
+    "content_type": "text/html; charset=utf-8",
+    "retrieved_at": "2026-11-09T21:59:04.999694+00:00",
+    "bytes": 432361,
+    "sha256": "27d2803fc7e40db1807f196d723227c04ca1100e5c32c32b941294f7d3bb4d15",
+    "authenticated": false
+  },
+  "steam_history": {
+    "url": "https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=Recoil%20Case&currency=3",
+    "final_url": "https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=Recoil%20Case&currency=3",
+    "status": 400,
+    "content_type": "application/json; charset=utf-8",
+    "retrieved_at": "2026-11-09T21:59:05.947668+00:00",
+    "bytes": 22,
+    "sha256": "21947b02ead137acb20e602e9448c7c453b2836d1a755aadd5e1c61ecd2eb034",
+    "authenticated": false,
+    "decoded_body": "[]",
+    "content_encoding_observed": "gzip"
+  },
+  "catalog_revision": "c52da3543f4cb57958d1e5c1847e6b692c02af4c",
+  "catalog-license.txt": {
+    "url": "https://raw.githubusercontent.com/ByMykel/CSGO-API/c52da3543f4cb57958d1e5c1847e6b692c02af4c/LICENSE",
+    "final_url": "https://raw.githubusercontent.com/ByMykel/CSGO-API/c52da3543f4cb57958d1e5c1847e6b692c02af4c/LICENSE",
+    "status": 200,
+    "content_type": "text/plain; charset=utf-8",
+    "retrieved_at": "2026-11-09T21:59:06.512963+00:00",
+    "bytes": 1064,
+    "sha256": "6fa98b8af7389dcc227d4f000994d235844dc653534cd5d5bff29de0aa50d88d",
+    "authenticated": false
+  },
+  "catalog-source.json": {
+    "url": "https://raw.githubusercontent.com/ByMykel/CSGO-API/c52da3543f4cb57958d1e5c1847e6b692c02af4c/public/api/en/skins_not_grouped.json",
+    "final_url": "https://raw.githubusercontent.com/ByMykel/CSGO-API/c52da3543f4cb57958d1e5c1847e6b692c02af4c/public/api/en/skins_not_grouped.json",
+    "status": 200,
+    "content_type": "text/plain; charset=utf-8",
+    "retrieved_at": "2026-11-09T21:59:06.752900+00:00",
+    "bytes": 32320348,
+    "sha256": "d17cc416560d837f59941e290526b51ae592aa77b58eca5194954018cab5c897",
+    "authenticated": false,
+    "json_keys": null
+  }
+}

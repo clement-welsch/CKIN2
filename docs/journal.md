@@ -10,6 +10,127 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-10 - Held inventory acceptance follow-up (#82, PR #94)
+
+Reused the inventory implementation already present in `codex/remaining-issues`
+rather than introducing a second implementation. Added an optional real-browser
+scenario at 1440px and 390px covering pagination, unchanged full-selection
+totals, combined missing-price/known-quantity/literal-name filters, page reset,
+keyboard submission, exact-object navigation, browser back and empty results.
+The existing browser fixture guard checks that portfolio files remain unchanged.
+
+The three focused inventory calculation/rendering tests passed with pinned
+direct dependencies on Linux CPython 3.12.14. The existing PR head also passed
+Windows and Linux GitHub Actions before this test-only follow-up. Chromium was
+actually attempted here but failed at startup because the executor denies its
+process-singleton Unix socket (`socket()`, `EPERM`). The new browser scenario is
+therefore **not verified in this executor**; the full functional suite is run
+with the browser class explicitly skipped for that reason. No production code,
+personal holdings or collected prices changed in this follow-up.
+
+Full local result: **223 tests passed, 3 browser tests skipped** (226 discovered,
+179.546 seconds). Dependency compatibility, Python compilation of the added
+scenario and `git diff --check` passed. This result does not claim execution of
+the newly added browser scenario.
+
+## 2026-11-09 - Remaining issues and direct-develop integration (in review)
+
+Branch: `codex/remaining-issues`; targets `develop` directly. This branch combines
+the delivered #80/#82/#85 work with merged #87/#88, retaining the independent
+visible-inventory route and its tests rather than overwriting either implementation.
+
+- #79: seven French notebook reports now lead with scope/results and retain
+  detailed audits in diagnostic appendices; formatting copies do not change
+  values, models or source frames. Published notebooks have no saved outputs.
+- #83: two exact recorded snapshots, shared covered price/quantity effects,
+  contributor links, exclusions and only calculable total changes/residuals.
+- #84: compatible URL state, explicit preset/custom dates, active-filter removal,
+  visible incompatible resets and browser-local save/open/rename/delete favorites.
+- #38: existing complete-owner/visible import, review-token/restore and account
+  coverage contracts audited against their synthetic acceptance tests.
+- #39: actual pinned ByMykel file with 21,407 records and byte-identical MIT
+  notice reviewed; three exact variants selected and three public EUR prices
+  collected under an isolated bounded study root, with zero portfolio rows.
+- #86: primary-source rights/cache/identity review documented a no-go for automatic
+  third-party imagery, as permitted by that issue. No images downloaded or bundled.
+- #57: exact listing accessible, anonymous history HTTP 400/empty array; no-go for
+  that mode. Positive graph/measure/timezone validation remains externally blocked.
+- #40: read-only readiness matrix and Research prerequisites added. Real channel
+  confirmation, authorized corpus and dated human review remain missing; no real
+  predictive benefit or causal relationship is claimed. #40/#57 remain open.
+
+Validation: **225 synthetic tests passed** on Linux CPython 3.12.14 with the pinned
+direct dependencies, including real Chromium acceptance for favorite lifecycle,
+invalid/obsolete records, denied storage, periods, back navigation, snapshot
+selection, keyboard and 390px layout. All notebook schemas/code cells, empty
+outputs, dependency compatibility and whitespace checks passed. Browser tests
+block external requests and preserve fixture bytes. Optional browser dependencies
+are not added to the Python contract; remote CI can skip that layer.
+
+The actual source study is distinct from synthetic validation: current catalog
+selection is 3/21,407 of one file, with one index base date and no longitudinal
+forecast evidence. No private holdings, account identifiers or transcripts are
+published. Personal data and the confirmed AK quantity were preserved. No
+automatic historical import, image cache, corpus acquisition, repair or trade
+was enabled. Remote CI follows publication; no PR merge is included here.
+
+## 2026-11-09 - Data quality and combined dashboard verification (in review)
+
+Branch: `codex/dashboard-data-quality`. Tracking: #85; stacked on #82.
+Added scoped quantity/price/category/import diagnostics with concrete repair
+procedures and latest local scheduler success/partial/failure/absent history.
+Shared statuses keep the summary and inventory consistent. Invalid optional
+snapshots, metadata, corpus, visible capture, archive, transaction or FIFO inputs
+leave independent views accessible; invalid primary prices/quantities block their
+dependent calculations without fallback totals. Shared analysis remains strict
+by default. Explicit observation identities avoid unnecessary metadata dependency.
+
+All **207 synthetic tests passed**, including five new diagnostic cases and
+14 total new tests across #80/#81/#82/#85. Existing notebook calculations and HTTP
+checks passed. Dependency and whitespace checks passed on Linux CPython 3.12.14.
+Chromium checks passed at 1440px and 390px for the four views, search, combined
+filters, paging, exact-variant navigation, account subsets and keyboard focus.
+No page errors, horizontal document overflow or fixture changes; external
+requests were blocked. Screenshots use synthetic holdings only. No personal
+inventory was collected or modified. Remote branch CI follows publication.
+
+The preceding #89 Windows path-test expectation was corrected to compare resolved
+paths; its Linux and Windows CI now pass. No merge was performed. Review branches
+remain stacked on that shared-data prerequisite, in feature order.
+
+## 2026-11-09 - Interactive held inventory table (in review)
+
+Branch: `codex/dashboard-inventory`. Tracking: #82; stacked on #81.
+Added held/unknown positions, exact-variant detail links, literal search, stable
+sorts, combined quantity/price filters and bounded pagination. Totals use shared
+valuation over the complete filtered selection. Zero positions and catalog-only
+identities do not become holdings. Nine focused synthetic tests passed (three
+new inventory cases plus six summary/reconciliation regressions), covering
+missing quantities/prices, old/zero prices, empty search, pagination and no writes.
+Mobile/keyboard browser checks follow combined dashboard integration.
+
+## 2026-11-09 - Known/visible inventory reconciliation (in review)
+
+Branch: `codex/dashboard-reconciliation`. Tracking: #81; stacked on #80.
+Added validated read-only selection/account comparisons with the global known
+portfolio, capture provenance/dates, unresolved mappings, omitted accounts and
+explicit transfer/storage limits. Missing observations stay unknown and cached
+captures are never summed. Three synthetic tests passed for empty/stored/unknown
+holdings, account subsets, capture skew, transfers, future/malformed captures,
+newly visible identities and unchanged fixture bytes with networking forbidden.
+No inventory was collected or modified during consultation.
+
+## 2026-11-09 - Compact portfolio landing page (in review)
+
+Branch: `codex/dashboard-overview`. Tracking: #80; stacked on #89 (#78).
+Shared totals, held identities and quantity/price coverage now lead the page.
+Quantity provenance, price freshness and snapshot dates are separate; historical
+mode, missing snapshots and unverified legacy imports are explicit. Detail tables
+remain accessible in category/object views. Six focused synthetic tests passed
+(three new summary tests plus category regressions), including partial/empty/stale
+data, shared-value parity, historical quantities and no writes/network. Visual
+browser checks follow combined dashboard integration. No personal data was used.
+
 ## 2026-11-09 - Shared notebook/dashboard portfolio contract (in review)
 
 Branch: `codex/unified-notebook-data`. Tracking: #78; targets `develop`.

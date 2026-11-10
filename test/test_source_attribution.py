@@ -37,6 +37,9 @@ class SourceAttributionTests(unittest.TestCase):
             bad = root / "data/processed"
             bad.mkdir(parents=True)
             (bad / "skins_inventory.csv").write_text("invalid", encoding="utf-8")
+            releases=root/"data/market/releases"
+            releases.mkdir(parents=True)
+            (releases/"corrupt.json").write_text("{")
             server = make_server(root, 0)
             worker = threading.Thread(target=server.serve_forever, daemon=True)
             worker.start()
@@ -44,7 +47,9 @@ class SourceAttributionTests(unittest.TestCase):
                 with urlopen(f"http://127.0.0.1:{server.server_port}/sources") as response:
                     self.assertEqual(response.status, 200)
                     self.assertEqual(response.headers["Cache-Control"], "no-store")
-                    self.assertIn("ByMykel", response.read().decode())
+                    page=response.read().decode()
+                    self.assertIn("ByMykel", page)
+                    self.assertIn("Release locale illisible", page)
             finally:
                 server.shutdown()
                 server.server_close()

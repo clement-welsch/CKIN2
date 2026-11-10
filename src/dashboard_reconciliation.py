@@ -1,141 +1,120 @@
-"""Read-only reconciliation of current known holdings and one visible capture."""
+"""Read-only comparison of one recorded visible selection with known holdings."""
 
-import html
 import json
+from html import escape
 from pathlib import Path
-from urllib.parse import urlencode
 
 import pandas as pd
 
-from portfolio_data import HOLDINGS, ROOT, load_holdings, validate_holdings
-from dashboard_categories import LABELS
-from steam_inventory import observation_differences, state, timestamp
+from dashboard_status import BASIS_LABELS
+from portfolio_data import HOLDINGS, validate_holdings
+from steam_inventory import observation_differences, timestamp
 
-STATUS = {
-    'not_observed': 'Non observé — quantité visible inconnue',
+STATUS_LABELS = {
+    'not_observed': 'Non observé · quantité visible inconnue',
     'known_total_unknown': 'Total connu inconnu',
-    'newly_observed': 'Nouvellement observé',
+    'newly_observed': 'Nouvellement observé · sans quantité patrimoniale déduite',
     'visible_below_known': 'Visible inférieur au connu',
     'visible_exceeds_known': 'Visible supérieur au connu',
-    'visible_matches_known': 'Concordant',
+    'visible_matches_known': 'Concordant sur le périmètre visible',
 }
-SOURCES = {'steam_community': 'Inventaire public Steam', 'owner_export': 'Export propriétaire visible'}
-BASES = {'manual_csv': 'Quantités des CSV locaux ; date de saisie non renseignée',
-         'owner_declared_full_portfolio': 'Remplacement complet déclaré par le propriétaire (non vérifié indépendamment)',
-         'legacy_override_coverage_unverified': 'Ancien remplacement : couverture non vérifiée'}
 
 
-def visible_capture(root):
-    """Validate the current capture; audits and cached past accounts are never summed."""
+def visible_holdings(records):
+    if not isinstance(records, list) or any(not isinstance(r, dict) or not set(HOLDINGS).issubset(r) for r in records):
+        raise ValueError('Invalid visible holding records')
+    frame = validate_holdings(pd.DataFrame(records, columns=HOLDINGS))
+    if frame.quantity.isna().any() or frame.quantity.le(0).any():
+        raise ValueError('Visible holdings require positive observed quantities')
+    return frame
+
+
+def read_observation(root, cutoff):
+    """Read only the latest explicit selection; never accumulate cached accounts."""
     path = Path(root) / 'data/processed/steam_inventory_visible.json'
     if not path.exists():
         return None
-    try:
-        value = json.loads(path.read_text(encoding='utf-8'))
-        if value['schema'] != 1 or value['inventory_scope'] != 'visible':
-            raise ValueError('Expected a visible capture')
-        ids = value['account_ids']
-        if (not isinstance(ids, list) or not ids or
-                any(not isinstance(a, str) or not a.strip() for a in ids) or len(set(ids)) != len(ids)):
-            raise ValueError('Invalid account selection')
-        accounts = value['accounts']
-        if not isinstance(accounts, list) or len(accounts) != len(ids) or {a['account_id'] for a in accounts} != set(ids):
-            raise ValueError('Missing account breakdown')
-        frames = []
-        for account in accounts:
-            key = account['account_id']
-            if (account['inventory_scope'] != 'visible' or account['source'] not in SOURCES or
-                    value['account_sources'][key] != account['source'] or
-                    pd.isna(timestamp(account['collected_at'])) or
-                    timestamp(account['collected_at']) != timestamp(value['account_collected_at'][key])):
-                raise ValueError('Invalid account provenance')
-            holdings = validate_holdings(pd.DataFrame(account['holdings'], columns=HOLDINGS))
-            if holdings.quantity.isna().any() or holdings.quantity.le(0).any():
-                raise ValueError('Visible holdings require positive known quantities')
-            if not isinstance(account['unresolved'], list) or any(not isinstance(n, str) for n in account['unresolved']):
-                raise ValueError('Invalid unresolved listings')
-            frames.append(holdings)
-        combined = pd.concat(frames, ignore_index=True).groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
-        declared = validate_holdings(pd.DataFrame(value['observed_holdings'], columns=HOLDINGS))
-        pd.testing.assert_frame_equal(combined.sort_values('item_id').reset_index(drop=True),
-                                      declared.sort_values('item_id').reset_index(drop=True), check_dtype=False)
-        if timestamp(value['collected_at']) != max(timestamp(a['collected_at']) for a in accounts):
-            raise ValueError('Invalid capture date')
-        latest_dates = value.get('latest_account_collected_at', {})
-        if not isinstance(latest_dates, dict):
-            raise ValueError('Invalid cached account dates')
-        for key, date in latest_dates.items():
-            if not isinstance(key, str) or pd.isna(timestamp(date)):
-                raise ValueError('Invalid cached account date')
-        return value
-    except (KeyError, TypeError, AssertionError, ValueError) as error:
-        raise ValueError('Observation visible locale invalide ; refaire une prévisualisation de l’export avant de l’enregistrer.') from error
+    value = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1 or value.get('inventory_scope') != 'visible':
+        raise ValueError('Invalid visible observation schema/scope')
+    ids, accounts = value.get('account_ids'), value.get('accounts')
+    if not isinstance(ids, list) or not ids or any(not isinstance(i, str) or not i.strip() for i in ids) or len(set(ids)) != len(ids):
+        raise ValueError('Invalid visible account selection')
+    if not isinstance(accounts, list) or len(accounts) != len(ids) or any(not isinstance(a, dict) for a in accounts):
+        raise ValueError('Invalid visible account records')
+    if {a.get('account_id') for a in accounts} != set(ids):
+        raise ValueError('Visible account selection mismatch')
+    frames, dates = [], []
+    for account in accounts:
+        stamp = timestamp(account['collected_at'])
+        if account.get('inventory_scope') != 'visible' or account.get('source') not in ('steam_community', 'owner_export'):
+            raise ValueError('Invalid visible account source')
+        if timestamp(value['account_collected_at'][account['account_id']]) != stamp:
+            raise ValueError('Conflicting visible account dates')
+        if value['account_sources'][account['account_id']] != account['source']:
+            raise ValueError('Conflicting visible account source')
+        unresolved = account.get('unresolved')
+        if not isinstance(unresolved, list) or any(not isinstance(n, str) for n in unresolved):
+            raise ValueError('Invalid unresolved visible listings')
+        frames.append(visible_holdings(account['holdings']))
+        dates.append(stamp)
+    combined = pd.concat(frames, ignore_index=True).groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
+    observed = visible_holdings(value['observed_holdings'])
+    expected = combined.sort_values('item_id').reset_index(drop=True)
+    actual = observed.sort_values('item_id').reset_index(drop=True)
+    if expected[HOLDINGS[:3]].to_dict('records') != actual[HOLDINGS[:3]].to_dict('records') or expected.quantity.tolist() != actual.quantity.tolist():
+        raise ValueError('Conflicting visible selection totals')
+    if timestamp(value['collected_at']) != max(dates):
+        raise ValueError('Conflicting visible capture date')
+    if max(dates) > pd.Timestamp(cutoff):
+        return None  # No reconstruction from audit/cached accounts at a past cutoff.
+    value['observed'] = observed
+    return value
 
 
-def reconcile(root=ROOT, account=''):
-    root = Path(root)
-    holdings, _ = load_holdings(root)
-    basis = state(root)['portfolio_basis']
-    override_path = root / 'data/processed/steam_inventory_override.json'
-    known_date = json.loads(override_path.read_text(encoding='utf-8')).get('collected_at') if override_path.exists() else None
-    capture = visible_capture(root)
-    if not capture:
-        if account:
-            raise ValueError('Compte absent de la capture actuelle')
-        return dict(rows=[], accounts=[], omitted={}, capture=None, basis=basis, known_date=known_date, staggered=False)
-    if account and account not in capture['account_ids']:
-        raise ValueError('Compte absent de la capture actuelle ; les anciennes captures ne sont pas additionnées')
-    selected = [a for a in capture['accounts'] if not account or a['account_id'] == account]
-    frames = [pd.DataFrame(a['holdings'], columns=HOLDINGS) for a in selected]
-    observed = pd.concat(frames, ignore_index=True).groupby(HOLDINGS[:3], as_index=False).quantity.sum()[HOLDINGS]
-    observed = validate_holdings(observed)
-    rows = observation_differences(holdings, observed)
-    selected_ids = {a['account_id'] for a in selected}
-    omitted = {key: date for key, date in capture.get('latest_account_collected_at', {}).items() if key not in selected_ids}
-    for a in capture['accounts']:
-        if a['account_id'] not in selected_ids:
-            omitted[a['account_id']] = a['collected_at']
-    return dict(rows=rows, accounts=selected, omitted=omitted, capture=capture, basis=basis,
-                known_date=known_date, staggered=len({timestamp(a['collected_at']) for a in selected}) > 1)
+def reconciliation(root, data, account='all'):
+    capture = read_observation(root, data['cutoff'])
+    if capture is None:
+        return dict(capture=None, rows=pd.DataFrame(), accounts=[], omitted=[], mismatched_dates=False)
+    if account != 'all' and account not in capture['account_ids']:
+        raise ValueError('Select an account from the current visible capture')
+    accounts = [a for a in capture['accounts'] if account == 'all' or a['account_id'] == account]
+    observed = capture['observed'] if account == 'all' else visible_holdings(accounts[0]['holdings'])
+    known = data['detail'].loc[data['detail'].state.eq('holdings'), HOLDINGS]
+    rows = pd.DataFrame(observation_differences(known, observed))
+    if rows.empty:
+        rows = pd.DataFrame(columns=[*HOLDINGS[:3], 'quantity_known', 'quantity_visible', 'status'])
+    rows = rows.loc[rows.category.isin(data['categories'])]
+    if data['selected_item_id']:
+        rows = rows.loc[rows.item_id.eq(data['selected_item_id'])]
+    omitted = sorted(set(capture.get('latest_account_collected_at', {})) - {a['account_id'] for a in accounts})
+    omitted = sorted(set(omitted) | (set(capture['account_ids']) - {a['account_id'] for a in accounts}))
+    dates = {timestamp(a['collected_at']) for a in accounts}
+    return dict(capture=capture, rows=rows, accounts=accounts, omitted=omitted, mismatched_dates=len(dates)>1)
 
 
-def render_reconciliation(root=ROOT, params=None):
-    params = params or {}
-    if set(params) - {'account'}:
-        raise ValueError('Filtre inconnu pour le rapprochement actuel')
-    account = params.get('account', '')
-    data = reconcile(root, account)
-    esc = lambda value: html.escape(str(value), quote=True)
-    body = '<p>Patrimoine connu : ' + esc(BASES[data['basis']]) + '. Date de capture propriétaire : ' + esc(data['known_date'] or 'Non renseignée') + '.</p>'
-    body += '<p>Comparaison actuelle avec une capture visible locale, sans filtre historique. Un seul patrimoine global ; aucune quantité visible n’est ajoutée au patrimoine.</p>'
-    body += '<p>Les unités de stockage et les comptes omis ne sont pas couverts. Non observé signifie inconnu, jamais vendu ou quantité zéro.</p>'
-    if not data['capture']:
-        body += '<h2>Aucune observation visible enregistrée</h2><p>Importer et valider explicitement un export visible avec la commande locale existante. Cette page ne collecte rien.</p>'
-    else:
-        options = '<option value="">Tous les comptes de cette capture</option>' + ''.join(
-            '<option value="' + esc(key) + '"' + (' selected' if key == account else '') + '>' + esc(key) + '</option>' for key in data['capture']['account_ids'])
-        body += '<form method="get"><label for="account">Comptes observés</label><select id="account" name="account">' + options + '</select><button>Comparer</button></form>'
-        body += '<h2>Sources de la sélection</h2><ul>' + ''.join('<li>' + esc(a['account_id']) + ' · ' + esc(a['collected_at']) + ' · ' + esc(SOURCES[a['source']]) + ' · périmètre visible</li>' for a in data['accounts']) + '</ul>'
-        if data['omitted']:
-            body += '<p>Comptes omis de cette comparaison (dates conservées uniquement, quantités exclues) : ' + '; '.join(esc(key) + ' · ' + esc(date) for key, date in sorted(data['omitted'].items())) + '.</p>'
-        body += '<p>Une capture pendant un transfert peut compter un objet deux fois ou ne pas le voir. Aucun transfert n’est identifié automatiquement.</p>'
-        if data['staggered']:
-            body += '<p><strong>Dates de capture décalées :</strong> la somme visible ne représente pas un état simultané.</p>'
-        for a in data['accounts']:
-            if a['unresolved']:
-                body += '<p>Correspondances non résolues pour ' + esc(a['account_id']) + ' (exclues du rapprochement) : ' + ', '.join(esc(n) for n in a['unresolved']) + '.</p>'
-        body += '<h2>Quantités connues et visibles</h2>'
-        if not data['rows']:
-            body += '<p>Aucun objet connu ni objet visible rapproché. Une capture vide ne prouve pas un patrimoine vide.</p>'
-        else:
-            body += '<p>Sur petit écran, faire défiler le tableau horizontalement ; au clavier, placer le focus sur le tableau puis utiliser les flèches.</p>'
-            body += '<div class="table" role="region" aria-label="Comparaison des quantités" tabindex="0"><table><caption>Identités exactes ; les quantités inconnues restent indisponibles</caption><thead><tr><th scope="col">Objet</th><th scope="col">Catégorie</th><th scope="col">Quantité connue</th><th scope="col">Quantité visible</th><th scope="col">Statut</th></tr></thead><tbody>'
-            for row in sorted(data['rows'], key=lambda r: (r['category'], r['item_name'], r['item_id'])):
-                url = '/?' + urlencode({'page': 'item', 'category': row['category'], 'item_id': row['item_id']})
-                body += '<tr><td><a href="' + esc(url) + '">' + esc(row['item_name']) + '</a></td><td>' + esc(LABELS[row['category']]) + '</td>'
-                body += ''.join('<td>' + (str(row[key]) if row[key] is not None else 'Inconnue') + '</td>' for key in ('quantity_known', 'quantity_visible'))
-                body += '<td>' + esc(STATUS[row['status']]) + '</td></tr>'
-            body += '</tbody></table></div>'
-    return '''<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CKIN2 · Rapprochement</title><style>
-body{margin:0;background:#101720;color:#e6edf5;font:16px/1.6 system-ui,sans-serif}main{max-width:1200px;margin:auto;padding:24px}a{color:#f8b55c}form{display:flex;gap:12px;flex-wrap:wrap;align-items:center}select,button{font:inherit;max-width:100%;padding:10px}table{border-collapse:collapse;width:100%}td,th{padding:12px;border-bottom:1px solid #526079;text-align:left}.table{overflow:auto}caption{text-align:left}a:focus-visible,select:focus-visible,button:focus-visible,.table:focus-visible{outline:3px solid #f8b55c;outline-offset:3px}@media(max-width:650px){main{padding:14px}form{display:grid}td,th{min-width:100px}}
-</style></head><body><main><a href="/">Retour au portefeuille</a><h1>Patrimoine connu et inventaire visible</h1><p>Lecture seule · fichiers locaux · aucune collecte ni modification</p>''' + body + '</main></body></html>'
+def reconciliation_page(root, data, params, account, table):
+    result = reconciliation(root, data, account)
+    body = '<section><h2>Patrimoine connu et inventaire visible</h2>'
+    body += '<p>Un seul patrimoine global. Les unités de stockage et les comptes omis ne sont pas couverts par la vue publique. '
+    body += 'Une absence reste inconnue : elle ne signifie ni quantité nulle, ni vente.</p>'
+    body += '<p>Quantités connues : ' + escape(BASIS_LABELS[data['provenance']['basis']]) + ' · date : ' + escape(str(data['provenance'].get('collected_at') or 'Non documentée')) + '</p>'
+    if result['capture'] is None:
+        return body + '<p class="empty">Aucune observation visible disponible à cette date. Importer explicitement un export local via steam_inventory.py en mode observation visible.</p></section>'
+    body += '<form method="get"><input type="hidden" name="page" value="reconciliation">'
+    body += ''.join('<input type="hidden" name="' + k + '" value="' + escape(str(v), quote=True) + '">' for k,v in params.items())
+    choices = [('all', 'Tous les comptes de cette sélection')] + [(i,i) for i in result['capture']['account_ids']]
+    body += '<label>Comptes observés<select name="observation_account">' + ''.join('<option value="' + escape(i,quote=True) + '"' + (' selected' if i==account else '') + '>' + escape(label) + '</option>' for i,label in choices) + '</select></label><button>Comparer</button></form>'
+    body += '<p>Capture sélectionnée : ' + escape(str(result['capture']['collected_at'])) + '. Les captures mises en cache ne sont jamais additionnées.</p>'
+    if result['omitted']:
+        body += '<p>Comptes omis de cette comparaison : ' + escape(', '.join(result['omitted'])) + '. Leurs quantités visibles sont inconnues.</p>'
+    if result['mismatched_dates']:
+        body += '<p>Dates de capture décalées entre comptes.</p>'
+    body += '<p>Un transfert pendant les captures peut produire un écart ou un double comptage apparent. Aucun transfert ni contenu stocké ne peut être identifié automatiquement.</p>'
+    metadata = pd.DataFrame([{'Compte':a['account_id'],'Date de capture':a['collected_at'],'Source':a['source'], 'Correspondances non résolues':', '.join(a['unresolved']) or 'Aucune'} for a in result['accounts']])
+    body += table(metadata)
+    rows = result['rows'].copy()
+    rows['status'] = rows.status.map(STATUS_LABELS)
+    rows = rows.rename(columns={'item_name':'Objet','category':'Catégorie','quantity_known':'Quantité connue','quantity_visible':'Quantité visible','status':'Rapprochement'})
+    body += table(rows[['Objet','Catégorie','Quantité connue','Quantité visible','Rapprochement']])
+    return body + '</section>'
