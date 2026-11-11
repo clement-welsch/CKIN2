@@ -2,6 +2,8 @@ import copy
 import json
 from pathlib import Path
 import sys
+import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -16,6 +18,39 @@ def sample():
 
 
 class SteamHistoryStudyTests(unittest.TestCase):
+    def test_malformed_url_types_success_flags_and_volume_digits_are_rejected(self):
+        for field in ('listing_url', 'response_url'):
+            for value in (None, 42, True, [], {}, '', 'https://[broken', '\n'+sample()[field], sample()[field]+'\t'):
+                capture=sample();capture[field]=value
+                with self.subTest(field=field,value=value), self.assertRaises(ValueError):
+                    analyze_capture(capture)
+        for value in (False, 0, 1.0, '1', None, [], {}):
+            capture=sample();capture['response']['success']=value
+            with self.subTest(success=value), self.assertRaises(ValueError):
+                analyze_capture(capture)
+        for value in (True, 1):
+            capture=sample();capture['response']['success']=value
+            self.assertEqual(analyze_capture(capture)['points'],2)
+        for value in ('١٢', '１２', '1,２３４', True, 1.5):
+            capture=sample();capture['response']['prices'][0][2]=value
+            with self.subTest(volume=value), self.assertRaises(ValueError):
+                analyze_capture(capture)
+
+    def test_cli_rejects_malformed_captures_without_traceback_or_writes(self):
+        script=Path(__file__).resolve().parents[1]/'src/steam_history_study.py'
+        malformed=dict(sample(),listing_url=42)
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'capture.json'
+            for content in ('{', json.dumps(malformed)):
+                path.write_text(content,encoding='utf-8')
+                result=subprocess.run([sys.executable,str(script),'school','--capture',str(path)],capture_output=True,text=True)
+                self.assertEqual(result.returncode,2)
+                self.assertEqual(result.stdout,'')
+                self.assertIn('Capture rejected:',result.stderr)
+                self.assertNotIn('Traceback',result.stderr)
+                self.assertEqual(path.read_text(encoding='utf-8'),content)
+                self.assertEqual(list(Path(directory).iterdir()),[path])
+
     def test_offline_sample_preserves_gaps_currency_zero_and_unknown_live_verdict(self):
         capture = sample()
         before = copy.deepcopy(capture)

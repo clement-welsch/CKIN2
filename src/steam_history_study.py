@@ -34,8 +34,16 @@ def analyze_capture(capture):
     name = capture.get('market_hash_name')
     if not isinstance(name, str) or not name.strip() or name != name.strip():
         raise ValueError('Exact market_hash_name required')
-    listing = urlsplit(capture.get('listing_url', ''))
-    response_url = urlsplit(capture.get('response_url', ''))
+    urls = []
+    for field in ('listing_url', 'response_url'):
+        value = capture.get(field)
+        if not isinstance(value, str) or not value or any(char.isspace() or ord(char) < 32 or ord(char) == 127 for char in value):
+            raise ValueError('Expected a nonempty URL string without whitespace or control characters')
+        try:
+            urls.append(urlsplit(value))
+        except ValueError as error:
+            raise ValueError('Invalid capture URL') from error
+    listing, response_url = urls
     if (listing.scheme != 'https' or listing.netloc != 'steamcommunity.com' or listing.query or listing.fragment
             or unquote(listing.path) != '/market/listings/730/' + name):
         raise ValueError('Listing does not match the exact declared variant')
@@ -54,7 +62,10 @@ def analyze_capture(capture):
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError('Invalid retrieved_at timestamp') from error
     payload = capture.get('response')
-    if not isinstance(payload, dict) or payload.get('success') not in (True, 1) or not isinstance(payload.get('prices'), list):
+    if not isinstance(payload, dict):
+        raise ValueError('Unsuccessful or unsupported history response')
+    success = payload.get('success')
+    if not (success is True or type(success) is int and success == 1) or not isinstance(payload.get('prices'), list):
         raise ValueError('Unsuccessful or unsupported history response')
     rows = []
     seen = set()
@@ -74,7 +85,7 @@ def analyze_capture(capture):
         except (InvalidOperation, ValueError) as error:
             raise ValueError('Expected finite nonnegative numeric price') from error
         volume_text = str(entry[2])
-        if not re.fullmatch(r'(?:\d+|\d{1,3}(?:,\d{3})+)', volume_text):
+        if not re.fullmatch(r'(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)', volume_text):
             raise ValueError('Unsupported volume format')
         rows.append(dict(timestamp_utc=date.isoformat(), price=str(price), volume=int(volume_text.replace(',', '')),
                          currency=currency, market_hash_name=name))

@@ -32,8 +32,10 @@ def readiness(root=ROOT,as_of=None,*,research_result=None):
         review=manifest.get('access_review',{})
         reviewed=review.get('authorized') is True and isinstance(review.get('method'),str) and bool(review['method'].strip()) and review.get('reviewed_at') and analysis_date(review['reviewed_at'])<=cutoff
         check('authorized_corpus',reviewed,'Acquisition method explicitly declared and dated; not an automatic grant of rights.')
-        videos=[v for v in manifest['videos'] if v.get('status')=='available' and analysis_date(v['published_at'])<=cutoff and analysis_date(v['collected_at'])<=cutoff]
-        check('eligible_transcripts',bool(videos),str(len(videos))+' temporally eligible available transcripts.')
+        coverage=result['coverage']
+        imported=set(coverage.loc[coverage.status.eq('imported') & coverage.segments.gt(0),'video_id']) if not coverage.empty else set()
+        videos=[v for v in manifest['videos'] if v.get('status')=='available' and v['video_id'] in imported and analysis_date(v['published_at'])<=cutoff and analysis_date(v['collected_at'])<=cutoff]
+        check('eligible_transcripts',bool(videos),str(len(videos))+' temporally eligible imported nonempty transcripts.')
         evaluation=result['evaluation']
         check('reviewed_extraction',bool(evaluation and evaluation['reviewed_passages']>0),'Extraction quality requires a dated reviewed sample including negatives and missed mentions.')
         comparisons=[]

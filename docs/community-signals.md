@@ -127,6 +127,12 @@ manual extraction evaluation and same-window price/community scores. Invalid
 inputs are reported without rewriting files or contacting YouTube. The Research
 page shows the same missing prerequisites while reusing its computed results.
 
+Transcript eligibility uses successful extraction coverage matched by video ID,
+with at least one parsed segment and publication/collection before the cutoff.
+An `available` manifest declaration alone does not count: missing files, empty
+text, unavailable videos and future availability are excluded. Text without a
+catalog mention still counts when it was successfully imported.
+
 On 2026-11-09 no real authorized corpus or dated manual evaluation was available
 in this workspace. Public searches suggested candidate creator pages but did not
 replace the user's exact identity confirmation, acquisition rights or a corpus.
