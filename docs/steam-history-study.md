@@ -49,6 +49,13 @@ valid; empty data remain unavailable, never evidence of no sales. Missing period
 are preserved. Observed spacings do not establish the source's aggregation
 granularity. Unknown formats fail for review rather than being guessed.
 
+URL fields must be nonempty strings without whitespace/control characters;
+malformed URLs are rejected as validation errors. The response success flag must
+be JSON `true` or integer `1` (float `1.0` is rejected). Volume uses ASCII digits,
+optionally grouped with thousands commas. The CLI returns exit code 2 with a
+`Capture rejected` diagnostic for malformed JSON or invalid fields, without
+modifying the capture or printing a traceback.
+
 The analyzer deliberately accepts only declared EUR in this initial study.
 Additional currencies need a checked mapping and separate units. The price
 measure remains unverified until the following manual checks are complete;
