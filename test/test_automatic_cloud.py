@@ -56,6 +56,13 @@ class AutomaticCloudTests(unittest.TestCase):
             flow = Mock()
             flow.run_local_server.return_value.refresh_token = "synthetic-refresh"
             flow.run_local_server.return_value.to_json.return_value = json.dumps({"refresh_token": "synthetic-refresh"})
+            credentials = flow.run_local_server.return_value
+            flow.authorization_url.return_value = ("https://accounts.google.com/o/oauth2/auth?state=synthetic", "synthetic")
+            def consent(**options):
+                flow.authorization_url()
+                self.assertTrue((root / "data/runtime/google-connect.html").exists())
+                return credentials
+            flow.run_local_server.side_effect = consent
             session = flow.authorized_session.return_value.__enter__ = Mock(return_value=Mock())
             flow.authorized_session.return_value.__exit__ = Mock(return_value=False)
             with patch("google_auth_oauthlib.flow.InstalledAppFlow.from_client_config", return_value=flow) as factory:
@@ -63,6 +70,7 @@ class AutomaticCloudTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         connect(root, client, "synthetic_folder_id")
                 self.assertFalse((root / "data/runtime/cloud-config.json").exists())
+                self.assertFalse((root / "data/runtime/google-connect.html").exists())
                 with patch("google_drive_cloud.check_folder"):
                     connect(root, client, "synthetic_folder_id")
                 self.assertEqual(factory.call_args.args[1], [SCOPE])
@@ -72,6 +80,7 @@ class AutomaticCloudTests(unittest.TestCase):
                 self.assertEqual(options["file_ids"], "synthetic_folder_id")
                 self.assertNotIn("{url}", options["authorization_prompt_message"])
             self.assertEqual(load_private(root / SECRET_PATH)["folder_id"], "synthetic_folder_id")
+            self.assertFalse((root / "data/runtime/google-connect.html").exists())
             import zipfile
             archive = publish(root, root / "cloud")
             with zipfile.ZipFile(archive) as bundle:

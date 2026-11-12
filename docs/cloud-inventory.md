@@ -52,6 +52,13 @@ locally, no prompt is needed. The flow uses OAuth state, PKCE, a loopback callba
 and only `drive.file` access to explicitly granted files. CKIN2 verifies that the
 selected folder accepts uploads before enabling automatic publication.
 
+If Windows does not open the browser, open the temporary private file
+`data/runtime/google-connect.html` yourself. It redirects to the same official
+Google request and is removed when the flow ends. Like other runtime files, it
+is excluded from Git and inventory archives. A test application may display an
+unverified-app notice; read it and make the consent decision yourself. Opening
+Google's help page is not the same as completing authorization.
+
 No link, folder ID or token belongs in code, README examples, PR descriptions or
 GitHub secrets. Runtime files live under Git-ignored `data/runtime/`; the folder
 ID and authorization are protected with account-bound DPAPI on Windows (mode

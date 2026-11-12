@@ -3,7 +3,9 @@
 import argparse
 import getpass
 import hashlib
+import html
 import json
+import os
 from pathlib import Path
 import re
 import tempfile
@@ -52,16 +54,32 @@ def connect(root, client_secrets, target):
             or settings.get("token_uri") != "https://oauth2.googleapis.com/token"):
         raise ValueError("Use Google's downloaded OAuth client configuration for a Desktop app")
     flow = InstalledAppFlow.from_client_config(client, [SCOPE], autogenerate_code_verifier=True)
-    credentials = flow.run_local_server(
-        host="127.0.0.1", port=0, timeout_seconds=180,
-        authorization_prompt_message="Complete the Google authorization in your browser.",
-        success_message="Autorisation reçue. Vous pouvez fermer cette fenêtre et revenir à CKIN2.",
-        prompt="consent", trigger_onepick="true", allow_folder_selection="true", file_ids=identifier)
+    # A private launcher is a fallback when Windows cannot open the default browser.
+    root = Path(root).resolve()
+    launcher = root / "data/runtime/google-connect.html"
+    launcher.parent.mkdir(parents=True, exist_ok=True)
+    authorization_url = flow.authorization_url
+    def prepare_authorization(**options):
+        url, state = authorization_url(**options)
+        with launcher.open("w", encoding="utf-8") as stream:
+            os.chmod(launcher, 0o600)
+            stream.write('<!doctype html><meta charset="utf-8"><title>Connexion CKIN2</title>'
+                         '<meta http-equiv="refresh" content="0;url=' + html.escape(url, quote=True) + '">')
+        print("If no browser opens, open the private file data/runtime/google-connect.html.", flush=True)
+        return url, state
+    flow.authorization_url = prepare_authorization
+    try:
+        credentials = flow.run_local_server(
+            host="127.0.0.1", port=0, timeout_seconds=300,
+            authorization_prompt_message="Complete the Google authorization in your browser.",
+            success_message="Autorisation reçue. Vous pouvez fermer cette fenêtre et revenir à CKIN2.",
+            prompt="consent", trigger_onepick="true", allow_folder_selection="true", file_ids=identifier)
+    finally:
+        launcher.unlink(missing_ok=True)
     if not credentials.refresh_token:
         raise ValueError("Google did not grant offline access; connect again")
     with flow.authorized_session() as session:
         check_folder(session, identifier)
-    root = Path(root)
     save_private(root / SECRET_PATH, {"folder_id": identifier, "credentials": json.loads(credentials.to_json())})
     write_state(root / "data/runtime/cloud-config.json", {"enabled": True, "provider": "google_drive"})
 

@@ -43,7 +43,9 @@ une demande de connexion au nom de CKIN2. Elle ne donne pas, à elle seule, acc�
 python src/google_drive_cloud.py connect --client-secrets ".secrets/client_secret.json"</code></pre>
 <ol><li>Si CKIN2 te le demande, colle le lien de ton dossier dans la saisie masquée. S’il a déjà été enregistré dans ta configuration privée, cette étape est automatique.</li>
 <li>Dans le navigateur, choisis le compte Google qui peut écrire dans ce dossier.</li>
-<li>Vérifie la demande d’autorisation, puis sélectionne le même dossier Drive. Termine la validation Google.</li>
+<li>Si le navigateur ne s’ouvre pas, ouvre toi-même le fichier temporaire privé <code>data/runtime/google-connect.html</code>. Il mène à la même demande officielle et sera supprimé à la fin.</li>
+<li>Si Google affiche « Google n’a pas validé cette application », il s’agit de la version de test. Lis l’avertissement. Si tu fais confiance à ton application CKIN2, le bouton <strong>Continuer</strong> poursuit la demande ; <strong>Revenir en lieu sûr</strong> l’annule. Une page d’aide Google ne confirme pas la connexion.</li>
+<li>Vérifie ensuite la demande d’autorisation, puis sélectionne le même dossier Drive. Termine la validation Google.</li>
 <li>Reviens dans CKIN2 : le message de connexion réussie confirme l’activation des publications automatiques.</li></ol>
 <p>Le mot de passe reste chez Google. L’autorisation et la destination sont conservées localement, protégées par ton compte Windows. Les archives n’emportent pas ces autorisations.</p></section>
 <section><h2>5. Vérifier une première sauvegarde</h2>
@@ -64,6 +66,15 @@ python src/dashboard.py --root "D:\CKIN2-cloud\copie-01"</code></pre>
 dates des prix et de l’inventaire. Pour une nouvelle archive, utilise un nouveau
 dossier, par exemple <code>copie-02</code>. La restauration refuse d’écraser un dossier existant.</p></section>
 <section><h2>En cas de difficulté</h2>
+<details><summary>Snapshot, archive cloud et prévision : quelle différence ?</summary>
+<p>Un snapshot est un état daté des objets et quantités de ton inventaire. Ouvrir
+le dashboard ne le crée pas : une mise à jour « home » enregistre celui du mois,
+et une nouvelle mise à jour dans le même mois le remplace.</p>
+<p>Une archive cloud est une copie transportable des données. En publier plusieurs
+le même jour n’ajoute pas des mois d’historique. Le modèle de prévision apprend
+sur les prix mensuels : il demande au moins 12 exemples d’apprentissage valides,
+donc plus de 12 mois de prix dans le cas habituel. Le mois en cours et les périodes
+inexploitables ne suffisent pas à compléter cet historique.</p></details>
 <details><summary>Google refuse le compte ou le dossier</summary><p>Vérifie que tu utilises le compte ajouté comme utilisateur de test, qu’il possède un droit d’écriture sur le dossier, et que tu as sélectionné le même dossier pendant la connexion. Recommence la commande de connexion si nécessaire.</p></details>
 <details><summary>Une autorisation a expiré</summary><p>Relance la commande de connexion. Les configurations Google en test peuvent exiger une reconnexion périodique. Ne contourne pas un avertissement de sécurité du navigateur.</p></details>
 <details><summary>Arrêter les sauvegardes automatiques</summary><pre><code>python src/google_drive_cloud.py disconnect</code></pre><p>Cette commande supprime l’autorisation enregistrée sur ce PC. Pour retirer aussi l’accès chez Google, supprime CKIN2 dans les connexions aux applications tierces de ton compte Google. Les archives déjà envoyées restent dans ton dossier privé.</p></details>
