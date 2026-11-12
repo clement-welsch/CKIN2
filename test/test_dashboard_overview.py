@@ -8,6 +8,7 @@ import pandas as pd
 
 from dashboard import render, view
 from dashboard_status import coverage
+from dashboard_overview import quantity_decrease_alert
 from global_analysis import analyze
 from global_snapshots import save_snapshot
 from test_multicategory_prices import fixture
@@ -15,6 +16,26 @@ from test_global_analysis import market_fixture
 
 
 class OverviewTests(unittest.TestCase):
+    def test_quantity_decrease_alert_preserves_unknown_and_monthly_reference(self):
+        from global_snapshots import build_snapshot
+        from portfolio_data import HOLDINGS, identity
+        old = pd.DataFrame([[identity('case', name), 'case', name, quantity]
+                            for name, quantity in [('Recoil', 19), ('Unknown', 4), ('Opened', 1)]], columns=HOLDINGS)
+        new = old.copy()
+        new['quantity'] = [18, None, 0]
+        history = pd.concat([build_snapshot(old, {'case'}, '2026-10-31'),
+                             build_snapshot(new, {'case'}, '2026-11-12')])
+        data = dict(snapshots=history, detail=build_snapshot(new, {'case'}, '2026-11-12'),
+                    historical_mode=False, cutoff=pd.Timestamp('2026-11-12'))
+        alert = quantity_decrease_alert(data)
+        self.assertIn('Recoil : 19 → 18', alert)
+        self.assertIn('Opened : 1 → 0', alert)
+        self.assertNotIn('Unknown', alert)
+        self.assertIn('2026-10-31', alert)
+        self.assertIn('ne bloque pas', alert)
+        data['detail'] = build_snapshot(old, {'case'}, '2026-11-12')
+        self.assertEqual(quantity_decrease_alert(data), '')
+
     def test_complete_partial_empty_and_stale_use_shared_values_without_writes(self):
         for scenario in ('complete', 'partial', 'empty', 'stale'):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
