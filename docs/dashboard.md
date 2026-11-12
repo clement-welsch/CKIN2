@@ -10,6 +10,23 @@ collection, file export or data mutation occurs on page load. Stop with Ctrl+C.
 Each GET reloads local data without caching; input errors produce a reset link.
 Do not expose the server through a proxy or port forwarding.
 
+## Steam price refresh
+
+Click **Mettre à jour les prix Steam** to run the existing `update_portfolio.py
+home` workflow in the background against the dashboard's data root. It collects
+the entire portfolio (independent of displayed filters), writes successful price
+observations and replaces the current monthly global snapshot. Page loads alone
+remain read-only. The dashboard stays available during collection and reloads
+the current page when it finishes, preserving filters. Historical date filters
+still select historical prices.
+
+The status reports success, partial coverage or failure, with expandable command
+output. Failed observations retain valid older prices. Repeated clicks cannot
+start another dashboard collection while one is running; the existing process
+lock also prevents overlap with scheduled or terminal collection. Refresh uses
+a same-origin POST; GET requests never initiate collection. Restart an already
+running dashboard after updating the code to see the new button.
+
 Views cover current value, six categories, object details, historical values,
 fixed-basket price indices, transactions, FIFO results, experimental forecasts
 and archived forecasts. Costs/history/forecasts missing from local files remain
