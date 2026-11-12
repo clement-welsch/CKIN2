@@ -8,9 +8,12 @@ An empty group retains unavailable metrics rather than invented perfect scores.
 
 This is an experimental **local corpus** workflow, not an automated YouTube
 scraper or a demonstrated forecasting improvement. The five requested creators
-are listed in `config/community.example.json` as unverified. No channel ID, URL,
-partnership or opinion is invented. Verify exact channel identities before
-adding videos. The first real authorized corpus and its annotation review remain
+have verified primary-source channel IDs in `config/community.example.json`
+as of 2026-11-12. The title, exact ID, source URL, retrieval time and response
+hash are recorded in [the source check](studies/2026-11-12-source-check.json).
+Verification used each page's channel metadata, excluding unrelated recommended
+channel IDs. This establishes identity, not permission to acquire transcripts.
+No partnership or opinion is invented. The first real authorized corpus and its annotation review remain
 to be supplied; no live collection is performed.
 
 Source access: YouTube's official
