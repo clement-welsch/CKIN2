@@ -9,6 +9,14 @@ desktop Google connection does not depend on the future website.
 
 ## Automatic publication
 
+The dashboard also provides **Copier l’inventaire dans le cloud**. It starts a
+background publication of saved inventory, prices and history, without Steam
+collection or an additional monthly snapshot. The button is disabled during its
+publication and reports success or failure in place. Page loads only read its
+status; they never start a transfer. Configure a cloud destination first. Cloud
+and collection commands share the process lock, so overlapping writers are
+rejected. Provider responses and private configuration are not shown in the UI.
+
 Once configured, publication runs after `update_portfolio.py home` (including
 the dashboard's Steam refresh and scheduled collection), an applied Steam owner
 import or visible capture, a Steam override rollback, and `process_categories.py`.

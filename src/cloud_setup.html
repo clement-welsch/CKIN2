@@ -49,6 +49,9 @@ python src/google_drive_cloud.py connect --client-secrets ".secrets/client_secre
 <li>Reviens dans CKIN2 : le message de connexion réussie confirme l’activation des publications automatiques.</li></ol>
 <p>Le mot de passe reste chez Google. L’autorisation et la destination sont conservées localement, protégées par ton compte Windows. Les archives n’emportent pas ces autorisations.</p></section>
 <section><h2>5. Vérifier une première sauvegarde</h2>
+<p>Dans le dashboard, clique sur <strong>Copier l’inventaire dans le cloud</strong>.
+Le message indique la progression et le résultat. Ce bouton sauvegarde les données
+déjà enregistrées ; il ne lance pas une collecte de prix. Tu peux aussi utiliser :</p>
 <pre><code>python src/google_drive_cloud.py publish</code></pre>
 <p>Attends le message confirmant l’envoi Google Drive, puis ouvre ton dossier Drive :
 une archive datée <code>ckin2-….zip</code> doit apparaître.</p>

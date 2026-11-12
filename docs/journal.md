@@ -35,6 +35,12 @@ in `docs/free-hosting-plan.md` and tracked by issue #103; no web deployment is
 claimed. The initial implementation passed 241 local Windows tests (3 skipped)
 and Windows/Linux CI; the guide and route follow-up receive focused validation.
 
+The dashboard also offers **Copier l’inventaire dans le cloud**, with a background
+operation, progress/result message, same-origin POST protection and no provider
+output in the UI. The action copies existing data without collecting Steam
+prices. Four collection/cloud-controller tests passed, and a real button click
+confirmed a Google Drive upload with the private local configuration.
+
 ## 2026-11-10 - Held inventory acceptance follow-up (#82, PR #94)
 
 Reused the inventory implementation already present in `codex/remaining-issues`
