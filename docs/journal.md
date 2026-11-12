@@ -28,6 +28,13 @@ scope selection and upload verification. Real Google consent and upload still
 require the user's Desktop OAuth client setup. Steam login remains separate;
 manual editor changes are not watched, and cloud uploads have no retry daemon.
 
+Follow-up in this PR adds a French setup page at `/cloud-setup`, accessible
+without inventory data and without exposing private configuration. Project
+contact `ckin2@free.fr` and the planned `ckin2.free.fr` migration are documented
+in `docs/free-hosting-plan.md` and tracked by issue #103; no web deployment is
+claimed. The initial implementation passed 241 local Windows tests (3 skipped)
+and Windows/Linux CI; the guide and route follow-up receive focused validation.
+
 ## 2026-11-10 - Held inventory acceptance follow-up (#82, PR #94)
 
 Reused the inventory implementation already present in `codex/remaining-issues`

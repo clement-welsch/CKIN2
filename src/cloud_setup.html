@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CKIN2 · Configurer Google Drive</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101720;color:#e6edf5;font:16px/1.7 system-ui,sans-serif}main{max-width:900px;margin:auto;padding:28px}h1{font-size:32px;line-height:1.25}h2{font-size:22px}a{color:#f8b55c}section{background:#17202b;border:1px solid #324154;border-radius:14px;padding:22px;margin:20px 0}li{margin:12px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#101720;padding:16px;border-radius:8px}code{overflow-wrap:anywhere}summary{cursor:pointer;font-weight:600}a:focus-visible,summary:focus-visible{outline:3px solid #f8b55c;outline-offset:4px}.note{color:#b8c9df}@media(max-width:600px){main{padding:16px}section{padding:16px}h1{font-size:27px}}
+</style></head>
+<body><main><a href="/">← Retour à mon inventaire</a>
+<h1>Configurer Google Drive</h1>
+<p>Retrouver à M2I une copie de l’inventaire mis à jour à la maison.</p>
+<section><h2>Ce qui va se passer</h2>
+<p>Tu autorises CKIN2 à déposer des archives dans un dossier Drive que tu choisis.
+Après une mise à jour enregistrée, CKIN2 envoie une nouvelle archive. À M2I,
+tu télécharges la plus récente pour la consulter.</p>
+<p>La connexion Steam sert à identifier un compte Steam. La connexion Google
+autorise les sauvegardes Drive. Ce tutoriel configure Google ; la connexion Steam
+sera ajoutée séparément. Le site public du projet n’est pas nécessaire pour cette configuration locale.</p>
+<p class="note">Cette page est un guide : elle ne connecte aucun compte et ne publie aucun fichier en s’ouvrant.</p></section>
+<section><h2>1. Préparer ton dossier</h2><ol>
+<li>Ouvre <a href="https://drive.google.com/">Google Drive</a> avec le compte qui possède ton inventaire.</li>
+<li>Crée un dossier privé pour CKIN2, ou réutilise celui que tu as déjà choisi.</li>
+<li>Garde son lien pour la connexion. Ne le colle pas dans un fichier du projet destiné à GitHub.</li>
+</ol><p>Aucune installation de Google Drive pour ordinateur n’est nécessaire avec cette méthode.</p></section>
+<section><h2>2. Identifier CKIN2 auprès de Google</h2>
+<p>Google appelle cette fiche un « projet Google Cloud ». Elle permet d’afficher
+une demande de connexion au nom de CKIN2. Elle ne donne pas, à elle seule, accès à ton Drive.</p><ol>
+<li>Ouvre la <a href="https://console.cloud.google.com/apis/dashboard">console Google Cloud</a> et sélectionne le bon compte.</li>
+<li>Lors de la première visite, lis et accepte les conditions si elles te conviennent.</li>
+<li>Clique sur <strong>Créer un projet</strong>, nomme-le <strong>CKIN2</strong>, puis sélectionne-le.</li>
+<li>Dans <strong>API et services → Bibliothèque</strong>, recherche et active <strong>Google Drive API</strong>, puis <strong>Google Picker API</strong>. Le second affiche le choix du dossier.</li>
+</ol><p>Ce parcours ne demande pas d’activer un essai gratuit ni de créer un compte de facturation.</p></section>
+<section><h2>3. Préparer l’écran de connexion</h2><ol>
+<li>Ouvre <strong>Écran de consentement OAuth</strong> ou <strong>Google Auth Platform</strong>, puis commence la configuration.</li>
+<li>Indique <strong>CKIN2</strong> comme nom de l’application, une adresse d’assistance disponible et une adresse de contact que tu contrôles.</li>
+<li>Pour un compte Google personnel, choisis l’audience <strong>Externe</strong>. Garde l’application en test au départ et ajoute ton compte Google dans les utilisateurs de test.</li>
+<li>Lis les règles et déclarations affichées par Google avant de les valider.</li>
+<li>Dans <strong>Clients</strong>, crée un <strong>ID client OAuth</strong> de type <strong>Application de bureau</strong>. Donne-lui par exemple le nom <strong>CKIN2 sur mon PC</strong>.</li>
+<li>Télécharge son fichier JSON et place-le dans le dossier privé <code>.secrets</code> du projet, sous le nom <code>client_secret.json</code>.</li>
+</ol><p class="note">Le fichier JSON contient la configuration de connexion. Il reste sur ton PC, hors de Git et des archives d’inventaire. En mode test Google peut demander une nouvelle connexion après expiration de l’autorisation.</p></section>
+<section><h2>4. Connecter Google une première fois</h2>
+<p>Depuis le dossier CKIN2, ouvre le terminal de ton environnement Python et lance :</p>
+<pre><code>python -m pip install -r requirements-cloud.txt
+python src/google_drive_cloud.py connect --client-secrets ".secrets/client_secret.json"</code></pre>
+<ol><li>Si CKIN2 te le demande, colle le lien de ton dossier dans la saisie masquée. S’il a déjà été enregistré dans ta configuration privée, cette étape est automatique.</li>
+<li>Dans le navigateur, choisis le compte Google qui peut écrire dans ce dossier.</li>
+<li>Vérifie la demande d’autorisation, puis sélectionne le même dossier Drive. Termine la validation Google.</li>
+<li>Reviens dans CKIN2 : le message de connexion réussie confirme l’activation des publications automatiques.</li></ol>
+<p>Le mot de passe reste chez Google. L’autorisation et la destination sont conservées localement, protégées par ton compte Windows. Les archives n’emportent pas ces autorisations.</p></section>
+<section><h2>5. Vérifier une première sauvegarde</h2>
+<pre><code>python src/google_drive_cloud.py publish</code></pre>
+<p>Attends le message confirmant l’envoi Google Drive, puis ouvre ton dossier Drive :
+une archive datée <code>ckin2-….zip</code> doit apparaître.</p>
+<p>Ensuite, les mises à jour « home », le bouton d’actualisation Steam du dashboard,
+les imports Steam validés et la conversion des catégories déclenchent la publication.
+Une modification de CSV faite à la main doit être suivie d’une mise à jour « home ».
+En cas d’échec réseau, les données locales sont conservées ; relance la publication
+ou attends la prochaine mise à jour. Le mode « school » ne publie rien.</p></section>
+<section><h2>6. Retrouver ton inventaire à M2I</h2><ol>
+<li>Télécharge la dernière archive terminée depuis ton dossier Drive.</li>
+<li>Dans la copie du projet installée à M2I, restaure-la vers un nouveau dossier. Adapte les chemins ci-dessous.</li></ol>
+<pre><code>python src/cloud_inventory.py restore "C:\chemin\archive.zip" --destination "D:\CKIN2-cloud\copie-01"
+python src/dashboard.py --root "D:\CKIN2-cloud\copie-01"</code></pre>
+<p>Ouvre <a href="http://127.0.0.1:8765/">le tableau de bord local</a> et vérifie les
+dates des prix et de l’inventaire. Pour une nouvelle archive, utilise un nouveau
+dossier, par exemple <code>copie-02</code>. La restauration refuse d’écraser un dossier existant.</p></section>
+<section><h2>En cas de difficulté</h2>
+<details><summary>Google refuse le compte ou le dossier</summary><p>Vérifie que tu utilises le compte ajouté comme utilisateur de test, qu’il possède un droit d’écriture sur le dossier, et que tu as sélectionné le même dossier pendant la connexion. Recommence la commande de connexion si nécessaire.</p></details>
+<details><summary>Une autorisation a expiré</summary><p>Relance la commande de connexion. Les configurations Google en test peuvent exiger une reconnexion périodique. Ne contourne pas un avertissement de sécurité du navigateur.</p></details>
+<details><summary>Arrêter les sauvegardes automatiques</summary><pre><code>python src/google_drive_cloud.py disconnect</code></pre><p>Cette commande supprime l’autorisation enregistrée sur ce PC. Pour retirer aussi l’accès chez Google, supprime CKIN2 dans les connexions aux applications tierces de ton compte Google. Les archives déjà envoyées restent dans ton dossier privé.</p></details>
+<p class="note">Les noms de menus Google peuvent évoluer. Pour les références techniques :
+<a href="https://developers.google.com/identity/protocols/oauth2/native-app">connexion des applications de bureau</a> et
+<a href="https://developers.google.com/workspace/drive/picker/guides/desktop-mobile-picker">choix du dossier Google</a>.</p>
+</section></main></body></html>

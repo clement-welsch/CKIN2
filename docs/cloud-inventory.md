@@ -1,5 +1,12 @@
 # Cloud inventory snapshots
 
+French step-by-step instructions are available from **Configurer Google Drive**
+in the dashboard (`/cloud-setup`), or by opening `src/cloud_setup.html` directly.
+The guide contains no private settings and does not require inventory files.
+The project email and planned website migration are documented in the
+[Free hosting plan](free-hosting-plan.md), tracked by issue #103. The current
+desktop Google connection does not depend on the future website.
+
 ## Automatic publication
 
 Once configured, publication runs after `update_portfolio.py home` (including

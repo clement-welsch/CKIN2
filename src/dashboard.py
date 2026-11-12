@@ -312,7 +312,7 @@ def render(root=ROOT, params=None, now=None):
     body += favorites_widget('/?'+urlencode({'page':page,**state}))
     navigation = '<nav aria-label="Vues du dashboard">' + "".join(
         '<a ' + ('aria-current="page" ' if key == page else '') + 'href="' +
-        escaped(target_url(state,key)) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/reconciliation">Patrimoine et inventaire visible</a><a href="/sources">Sources et licences</a></nav>'
+        escaped(target_url(state,key)) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/reconciliation">Patrimoine et inventaire visible</a><a href="/cloud-setup">Configurer Google Drive</a><a href="/sources">Sources et licences</a></nav>'
     latest_price = data["detail"].price_date.max() if len(data["detail"]) else pd.NaT
     if selected_detail is not None:
         latest_price = selected_detail["latest_date"]
@@ -376,6 +376,9 @@ def make_server(root=ROOT, port=8765):
                     content, mime = Path(__file__).with_name('dashboard_preferences.js').read_text(encoding='utf-8'), 'application/javascript'
                 elif path.path == "/sources":
                     content, mime = sources_page(root), "text/html; charset=utf-8"
+                elif path.path == "/cloud-setup":
+                    content = Path(__file__).with_name("cloud_setup.html").read_text(encoding="utf-8")
+                    mime = "text/html; charset=utf-8"
                 elif path.path == "/reconciliation":
                     from dashboard_visible_route import render_reconciliation
                     query = parse_qs(path.query)

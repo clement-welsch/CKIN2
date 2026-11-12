@@ -5,6 +5,10 @@ Drive, Dropbox or OneDrive folder, see [cloud snapshots](docs/cloud-inventory.md
 The same guide covers automatic publication after home updates and an optional
 direct Google Drive connection with private, locally stored authorization.
 
+Project contact: `ckin2@free.fr`. Deployment to the planned `ckin2.free.fr`
+website is tracked in [issue #103](https://github.com/clement-welsch/CKIN2/issues/103);
+see the [hosting plan](docs/free-hosting-plan.md). The website is not deployed yet.
+
 Development history, dated feature summaries, validation notes and pull request
 links are recorded in the [development journal](docs/journal.md).
 
