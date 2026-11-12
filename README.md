@@ -1,5 +1,8 @@
 # CKIN2
 
+To share inventory, prices and history between home and M2I through a Google
+Drive, Dropbox or OneDrive folder, see [cloud snapshots](docs/cloud-inventory.md).
+
 Development history, dated feature summaries, validation notes and pull request
 links are recorded in the [development journal](docs/journal.md).
 
