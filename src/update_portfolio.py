@@ -91,6 +91,13 @@ def _run(root=ROOT, environment="school", *, date=None, snapshot_path=None,
     except (ValueError, OSError, KeyError, TypeError, AttributeError) as error:
         status = FAILURE
         stages.append(dict(stage=stage, status="failed", error=str(error)))
+    if environment == "home" and any(s["stage"] == "snapshot" and s["status"] == "saved" for s in stages):
+        from cloud_inventory import auto_publish
+        cloud = auto_publish(root)
+        if cloud["status"] != "disabled":
+            stages.append(cloud)
+        if cloud["status"] == "failed" and status != FAILURE:
+            status = PARTIAL
     print("\nExecution summary")
     print(pd.DataFrame(stages).to_string(index=False, na_rep="N/A"))
     print(f"Exit status: {status} (0=success, 1=partial, 2=failure)")

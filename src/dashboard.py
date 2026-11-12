@@ -28,7 +28,7 @@ from source_attribution import sources_page
 from dashboard_categories import LABELS, category_data, category_figures, value_distribution
 from dashboard_categories import figure_html
 from dashboard_items import independent_prices, item_details, item_registry
-from dashboard_collection import PriceRefresh, REFRESH_WIDGET
+from dashboard_collection import PriceRefresh, CloudPublication, REFRESH_WIDGET
 
 
 def escaped(value):
@@ -312,7 +312,7 @@ def render(root=ROOT, params=None, now=None):
     body += favorites_widget('/?'+urlencode({'page':page,**state}))
     navigation = '<nav aria-label="Vues du dashboard">' + "".join(
         '<a ' + ('aria-current="page" ' if key == page else '') + 'href="' +
-        escaped(target_url(state,key)) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/reconciliation">Patrimoine et inventaire visible</a><a href="/sources">Sources et licences</a></nav>'
+        escaped(target_url(state,key)) + '">' + title + '</a>' for key, title in pages.items()) + '<a href="/reconciliation">Patrimoine et inventaire visible</a><a href="/cloud-setup">Configurer Google Drive</a><a href="/sources">Sources et licences</a></nav>'
     latest_price = data["detail"].price_date.max() if len(data["detail"]) else pd.NaT
     if selected_detail is not None:
         latest_price = selected_detail["latest_date"]
@@ -341,6 +341,7 @@ def render(root=ROOT, params=None, now=None):
 
 def make_server(root=ROOT, port=8765):
     refresh = PriceRefresh(root)
+    cloud = CloudPublication(root)
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
             allowed = (f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}")
@@ -352,10 +353,11 @@ def make_server(root=ROOT, port=8765):
                     or self.headers.get("Content-Length", "0") != "0"):
                 self.send_error(403)
                 return
-            if self.path != "/api/steam-refresh":
+            actions = {"/api/steam-refresh": refresh, "/api/cloud-publish": cloud}
+            if self.path not in actions:
                 self.send_error(404)
                 return
-            self.send_response(202 if refresh.start() else 409)
+            self.send_response(202 if actions[self.path].start() else 409)
             self.send_header("Content-Length", "0")
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
@@ -368,6 +370,10 @@ def make_server(root=ROOT, port=8765):
             try:
                 if path.path == "/api/steam-refresh":
                     content, mime = json.dumps(refresh.status()), "application/json; charset=utf-8"
+                elif path.path == "/api/cloud-publish":
+                    content, mime = json.dumps(cloud.status()), "application/json; charset=utf-8"
+                elif path.path == "/cloud-publish.js":
+                    content, mime = Path(__file__).with_name("dashboard_cloud.js").read_text(encoding="utf-8"), "application/javascript"
                 elif path.path == "/steam-refresh.js":
                     content, mime = Path(__file__).with_name('dashboard_collection.js').read_text(encoding='utf-8'), 'application/javascript'
                 elif path.path == "/plotly.js":
@@ -376,6 +382,9 @@ def make_server(root=ROOT, port=8765):
                     content, mime = Path(__file__).with_name('dashboard_preferences.js').read_text(encoding='utf-8'), 'application/javascript'
                 elif path.path == "/sources":
                     content, mime = sources_page(root), "text/html; charset=utf-8"
+                elif path.path == "/cloud-setup":
+                    content = Path(__file__).with_name("cloud_setup.html").read_text(encoding="utf-8")
+                    mime = "text/html; charset=utf-8"
                 elif path.path == "/reconciliation":
                     from dashboard_visible_route import render_reconciliation
                     query = parse_qs(path.query)

@@ -13,6 +13,7 @@ import pandas as pd
 from collection_runtime import collection_lock
 from portfolio_data import CATEGORIES, HOLDINGS, ROOT, _parse_dates, load_holdings, validate_holdings
 from update_market_prices import validate_catalog
+from cloud_inventory import auto_publish
 
 
 def canonical(value):
@@ -246,11 +247,14 @@ def apply(export, catalog, token, root=ROOT, environment="school"):
     with collection_lock(root):
         plan = preview(export, catalog, root)
         if plan['inventory_scope'] == 'visible':
-            return _record_observation(plan, token, root)
+            value = _record_observation(plan, token, root)
+            auto_publish(root)
+            return value
         path = root / "data/processed/steam_inventory_override.json"
         previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
         # Same source and current quantities: exact repetition is a no-op.
         if previous and previous.get("source_hash") == plan["source_hash"] and previous["holdings"] == plan["holdings"]:
+            auto_publish(root)
             return previous
         if not isinstance(token, str) or token != plan["review_token"]:
             raise ValueError("Review token does not match current preview; preview again")
@@ -273,6 +277,7 @@ def apply(export, catalog, token, root=ROOT, environment="school"):
                      account_id=plan["account_id"], account_ids=plan["account_ids"],
                      account_collected_at=plan["account_collected_at"], backup_id=backup_key)
         atomic_json(value, path)
+        auto_publish(root)
         return value
 
 
@@ -326,6 +331,7 @@ def restore(root=ROOT, environment="school"):
             path.unlink()
         else:
             atomic_json(previous, path)
+        auto_publish(root)
 
 
 if __name__ == "__main__":

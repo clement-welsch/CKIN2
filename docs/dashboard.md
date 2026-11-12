@@ -1,5 +1,12 @@
 # Local dashboard (#37)
 
+The **Copier l’inventaire dans le cloud** button publishes saved inventory and
+history through the configured cloud connection. It runs in the background and
+shows its result without changing filters or collecting Steam prices. Repeated
+clicks cannot start overlapping dashboard publications; the writer lock also
+prevents overlap with inventory collection. Page loads only read status. See
+[cloud setup](cloud-inventory.md) to connect Google or a synced folder first.
+
 ```powershell
 python src/dashboard.py
 ```

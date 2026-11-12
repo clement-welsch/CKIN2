@@ -10,10 +10,58 @@ from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from dashboard import make_server
-from dashboard_collection import PriceRefresh
+from dashboard_collection import PriceRefresh, CloudPublication
 
 
 class RefreshTests(unittest.TestCase):
+    def test_cloud_command_reports_success_and_redacts_failures(self):
+        for code, output, expected in [(0, 'Cloud: Google Drive upload confirmed.', 'success'),
+                                      (0, 'Cloud: archive ready', 'success'),
+                                      (1, 'private-provider-response', 'error'),
+                                      (2, 'private-provider-response', 'error')]:
+            with self.subTest(code=code, output=output), tempfile.TemporaryDirectory() as temporary:
+                cloud = CloudPublication(temporary)
+                result = type('Result', (), dict(returncode=code, stdout=output, stderr='private-secret'))()
+                with patch('dashboard_collection.subprocess.run', return_value=result) as command:
+                    cloud._run()
+                self.assertEqual(command.call_args.args[0][-3:], ['publish', '--root', str(Path(temporary).resolve())])
+                self.assertEqual(cloud.status()['state'], expected)
+                self.assertNotIn('private', json.dumps(cloud.status()))
+                self.assertNotIn('detail', cloud.status())
+
+    def test_cloud_routes_require_same_origin_post_and_get_is_read_only(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            server = make_server(Path(temporary), 0)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            url = f'http://127.0.0.1:{server.server_port}'
+            try:
+                with patch.object(CloudPublication, 'start', return_value=True) as start:
+                    with urlopen(url + '/api/cloud-publish') as response:
+                        self.assertEqual(json.load(response)['state'], 'idle')
+                    with urlopen(url + '/cloud-publish.js') as response:
+                        self.assertIn(b'/api/cloud-publish', response.read())
+                    start.assert_not_called()
+                    for headers in ({}, {'X-CKIN2-Refresh': '1', 'Origin': 'https://evil.test'}):
+                        with self.assertRaises(HTTPError) as caught:
+                            urlopen(Request(url + '/api/cloud-publish', data=b'', headers=headers))
+                        self.assertEqual(caught.exception.code, 403)
+                        caught.exception.close()
+                    start.assert_not_called()
+                    with urlopen(Request(url + '/api/cloud-publish', data=b'', headers={'X-CKIN2-Refresh': '1'})) as response:
+                        self.assertEqual(response.status, 202)
+                    start.assert_called_once()
+                    start.return_value = False
+                    with self.assertRaises(HTTPError) as caught:
+                        urlopen(Request(url + '/api/cloud-publish', data=b'', headers={'X-CKIN2-Refresh': '1'}))
+                    self.assertEqual(caught.exception.code, 409)
+                    caught.exception.close()
+                self.assertFalse(list(Path(temporary).rglob('*')))
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
+
     def test_background_command_duplicate_and_results(self):
         for code, expected in [(0, 'success'), (1, 'partial'), (2, 'error')]:
             with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:

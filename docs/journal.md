@@ -10,6 +10,37 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-12 - Automatic private cloud publication (in review)
+
+Branch: `codex/automatic-cloud-publication`, following cloud snapshots PR #101.
+Adds opt-in publication after home collection, reviewed Steam imports/rollback
+and category conversion. Direct Google Drive uses desktop OAuth with PKCE and
+folder selection, offline access and upload integrity verification. Local synced
+folders remain supported. Cloud failures preserve local updates; school mode
+and previews remain read-only. Archives now include the specific Steam state
+JSONs needed to reproduce effective holdings, excluding runtime credentials.
+Windows authorizations use account-bound DPAPI; POSIX files use mode 0600.
+The private target and authorization files are excluded from Git and archives.
+
+Synthetic validation covers automatic triggers, school mode, failure retention,
+effective-holdings round trips, authorization-before-enable, private storage,
+scope selection and upload verification. Real Google consent and upload still
+require the user's Desktop OAuth client setup. Steam login remains separate;
+manual editor changes are not watched, and cloud uploads have no retry daemon.
+
+Follow-up in this PR adds a French setup page at `/cloud-setup`, accessible
+without inventory data and without exposing private configuration. Project
+contact `ckin2@free.fr` and the planned `ckin2.free.fr` migration are documented
+in `docs/free-hosting-plan.md` and tracked by issue #103; no web deployment is
+claimed. The initial implementation passed 241 local Windows tests (3 skipped)
+and Windows/Linux CI; the guide and route follow-up receive focused validation.
+
+The dashboard also offers **Copier l’inventaire dans le cloud**, with a background
+operation, progress/result message, same-origin POST protection and no provider
+output in the UI. The action copies existing data without collecting Steam
+prices. Four collection/cloud-controller tests passed, and a real button click
+confirmed a Google Drive upload with the private local configuration.
+
 ## 2026-11-10 - Held inventory acceptance follow-up (#82, PR #94)
 
 Reused the inventory implementation already present in `codex/remaining-issues`
