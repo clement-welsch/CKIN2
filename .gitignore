@@ -223,3 +223,9 @@ __marimo__/
 
 #Artefacts
 [Dd]ata/
+
+# Local OAuth downloads and private settings (never commit authorization files).
+.secrets/
+client_secret*.json
+credentials.json
+token.json

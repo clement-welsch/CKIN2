@@ -2,6 +2,8 @@
 
 To share inventory, prices and history between home and M2I through a Google
 Drive, Dropbox or OneDrive folder, see [cloud snapshots](docs/cloud-inventory.md).
+The same guide covers automatic publication after home updates and an optional
+direct Google Drive connection with private, locally stored authorization.
 
 Development history, dated feature summaries, validation notes and pull request
 links are recorded in the [development journal](docs/journal.md).

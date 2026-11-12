@@ -151,6 +151,15 @@ def preserve_acquisitions(path, generated):
 
 
 def main(root=PROJECT_ROOT):
+    from collection_runtime import collection_lock
+    from cloud_inventory import auto_publish
+    root = Path(root)
+    with collection_lock(root):
+        _convert_and_save(root)
+        auto_publish(root)
+
+
+def _convert_and_save(root):
     inventories, prices, issues = convert(root / "data/raw")
     target = root / "data/processed"
     target.mkdir(parents=True, exist_ok=True)

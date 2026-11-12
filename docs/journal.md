@@ -10,6 +10,24 @@ limitations. Clearly distinguish planned work, work in review and merged changes
 Keep personal inventory data, credentials and private notebook outputs out of
 the journal.
 
+## 2026-11-12 - Automatic private cloud publication (in review)
+
+Branch: `codex/automatic-cloud-publication`, following cloud snapshots PR #101.
+Adds opt-in publication after home collection, reviewed Steam imports/rollback
+and category conversion. Direct Google Drive uses desktop OAuth with PKCE and
+folder selection, offline access and upload integrity verification. Local synced
+folders remain supported. Cloud failures preserve local updates; school mode
+and previews remain read-only. Archives now include the specific Steam state
+JSONs needed to reproduce effective holdings, excluding runtime credentials.
+Windows authorizations use account-bound DPAPI; POSIX files use mode 0600.
+The private target and authorization files are excluded from Git and archives.
+
+Synthetic validation covers automatic triggers, school mode, failure retention,
+effective-holdings round trips, authorization-before-enable, private storage,
+scope selection and upload verification. Real Google consent and upload still
+require the user's Desktop OAuth client setup. Steam login remains separate;
+manual editor changes are not watched, and cloud uploads have no retry daemon.
+
 ## 2026-11-10 - Held inventory acceptance follow-up (#82, PR #94)
 
 Reused the inventory implementation already present in `codex/remaining-issues`

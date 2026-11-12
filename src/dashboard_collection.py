@@ -34,7 +34,7 @@ class PriceRefresh:
             )
             state, message = {
                 0: ("success", "Prix Steam mis à jour et snapshot mensuel enregistré."),
-                1: ("partial", "Actualisation partielle : certains prix sont manquants, anciens ou leur collecte a échoué."),
+                1: ("partial", "Actualisation partielle : vérifiez la couverture des prix et la publication cloud dans les détails."),
             }.get(result.returncode, ("error", "Actualisation impossible : vérifiez les données ou une collecte déjà en cours."))
             detail = result.stdout + result.stderr
         except Exception as error:
