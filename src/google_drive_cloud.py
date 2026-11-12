@@ -70,7 +70,7 @@ def connect(root, client_secrets, target):
     flow.authorization_url = prepare_authorization
     try:
         credentials = flow.run_local_server(
-            host="127.0.0.1", port=0, timeout_seconds=300,
+            host="127.0.0.1", port=0, timeout_seconds=900,
             authorization_prompt_message="Complete the Google authorization in your browser.",
             success_message="Autorisation reçue. Vous pouvez fermer cette fenêtre et revenir à CKIN2.",
             prompt="consent", trigger_onepick="true", allow_folder_selection="true", file_ids=identifier)
@@ -154,7 +154,9 @@ def main(argv=None):
             else:
                 from cloud_inventory import auto_publish
                 return 1 if auto_publish(args.root)["status"] in ("failed", "disabled") else 0
-    except Exception:
+    except Exception as error:
+        if type(error).__name__ == "WSGITimeoutError":
+            parser.exit(2, "Google connection timed out. Run connect again and finish the browser steps within 15 minutes.\n")
         parser.exit(2, "Google operation failed. Check local setup and Google authorization; no private details were logged.\n")
     return 0
 
