@@ -1,8 +1,9 @@
-"""Local read-only portfolio dashboard; no collection or browser-side CDN."""
+"""Local portfolio dashboard with explicit Steam refresh; no browser-side CDN."""
 
 import argparse
 import contextlib
 import html
+import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
 from pathlib import Path
@@ -27,6 +28,7 @@ from source_attribution import sources_page
 from dashboard_categories import LABELS, category_data, category_figures, value_distribution
 from dashboard_categories import figure_html
 from dashboard_items import independent_prices, item_details, item_registry
+from dashboard_collection import PriceRefresh, REFRESH_WIDGET
 
 
 def escaped(value):
@@ -333,19 +335,42 @@ def render(root=ROOT, params=None, now=None):
 <title>CKIN2 · Portefeuille</title><script src="/plotly.js"></script><style>
 *{{box-sizing:border-box}}body{{margin:0;background:#101720;color:#e6edf5;font:15px/1.6 system-ui,sans-serif}}main{{max-width:1440px;margin:auto;padding:32px}}h1{{font-size:38px;margin:0}}h2{{font-size:22px}}.eyebrow{{color:#f8b55c;letter-spacing:3px}}p,small{{color:#acbbcd}}section,form{{background:#17202b;border:1px solid #2b394b;border-radius:16px;padding:24px;margin:22px 0}}form{{display:flex;flex-wrap:wrap;gap:16px;align-items:end}}label{{display:grid;gap:6px;min-width:140px;flex:1}}select,input,button{{font:inherit;border:1px solid #526079;border-radius:7px;padding:10px;background:#101720;color:#e6edf5;max-width:100%;min-width:0}}button{{background:#f8b55c;color:#101720;cursor:pointer}}.cards{{display:flex;gap:20px;flex-wrap:wrap}}article{{flex:1;min-width:220px;padding:20px;background:#101720;border-radius:10px}}strong{{display:block;font-size:28px}}.table{{overflow:auto;max-height:480px}}table{{border-collapse:collapse;width:100%;white-space:nowrap;font-size:13px}}td,th{{padding:10px;border-bottom:1px solid #324154;text-align:left}}th{{position:sticky;top:0;background:#202d3d}}.empty{{padding:20px;border:1px dashed #526079;border-radius:10px}}@media(max-width:650px){{main{{padding:14px}}section,form{{padding:14px}}h1{{font-size:29px}}label{{min-width:100%}}.cards{{display:block}}article{{margin-bottom:12px}}}}
 </style><style>nav{{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}}nav a{{color:#d4deeb;text-decoration:none;padding:10px 15px;border:1px solid #526079;border-radius:9px}}nav a[aria-current]{{background:#f8b55c;color:#101720}}h3{{font-size:17px}}a{{color:#f8b55c}}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{{outline:3px solid #f8b55c;outline-offset:3px}}dt{{font-weight:600}}dd{{margin:0 0 12px;overflow-wrap:anywhere}}</style></head><body><main><div class="eyebrow">CKIN2 / OBSERVATOIRE</div><h1>Mon portefeuille CS2</h1>{navigation}
-<p>Lecture seule · données locales · actualisé à chaque chargement · analyse au {escaped(data["cutoff"])}<br>Dernier prix utilisé : {escaped(latest_price)} · dernier snapshot de la période : {escaped(last_snapshot)}</p>
-{controls}{body}</main></body></html>'''
+<p>Données locales · actualisées à chaque chargement · analyse au {escaped(data["cutoff"])}<br>Dernier prix utilisé : {escaped(latest_price)} · dernier snapshot de la période : {escaped(last_snapshot)}</p>
+{REFRESH_WIDGET}{controls}{body}</main></body></html>'''
 
 
 def make_server(root=ROOT, port=8765):
+    refresh = PriceRefresh(root)
     class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            allowed = (f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}")
+            host = self.headers.get("Host")
+            if (host not in allowed or self.headers.get("X-CKIN2-Refresh") != "1"
+                    or self.headers.get("Origin") not in (None, "http://" + host)
+                    or self.headers.get("Sec-Fetch-Site") not in (None, "same-origin")
+                    or self.headers.get("Transfer-Encoding") is not None
+                    or self.headers.get("Content-Length", "0") != "0"):
+                self.send_error(403)
+                return
+            if self.path != "/api/steam-refresh":
+                self.send_error(404)
+                return
+            self.send_response(202 if refresh.start() else 409)
+            self.send_header("Content-Length", "0")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+
         def do_GET(self):
             if self.headers.get("Host") not in (f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"):
                 self.send_error(403)
                 return
             path = urlsplit(self.path)
             try:
-                if path.path == "/plotly.js":
+                if path.path == "/api/steam-refresh":
+                    content, mime = json.dumps(refresh.status()), "application/json; charset=utf-8"
+                elif path.path == "/steam-refresh.js":
+                    content, mime = Path(__file__).with_name('dashboard_collection.js').read_text(encoding='utf-8'), 'application/javascript'
+                elif path.path == "/plotly.js":
                     content, mime = get_plotlyjs(), "application/javascript"
                 elif path.path == "/dashboard.js":
                     content, mime = Path(__file__).with_name('dashboard_preferences.js').read_text(encoding='utf-8'), 'application/javascript'
@@ -389,7 +414,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     server = make_server(args.root, args.port)
-    print(f"CKIN2 read-only dashboard: http://127.0.0.1:{server.server_port} (Ctrl+C to stop)", flush=True)
+    print(f"CKIN2 dashboard: http://127.0.0.1:{server.server_port} (Ctrl+C to stop)", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
