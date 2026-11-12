@@ -1,0 +1,75 @@
+{
+  "steam_listing": {
+    "url": "https://steamcommunity.com/market/listings/730/Recoil%20Case?l=english&currency=3",
+    "final_url": "https://steamcommunity.com/market/listings/730/G18EE253004?l=english&currency=3",
+    "status": 200,
+    "retrieved_at": "2026-11-12T06:48:55.406225+00:00",
+    "bytes": 442865,
+    "sha256": "9b13138dbeb3a4369d8071c53b4dc3800ae181ac37fda5fd1932c027a97927a1",
+    "title": [
+      "Recoil Case - Steam Community Market"
+    ],
+    "channel_ids": [],
+    "inline_line1_present": false
+  },
+  "steam_history": {
+    "url": "https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=Recoil%20Case&currency=3",
+    "final_url": "https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=Recoil%20Case&currency=3",
+    "status": 400,
+    "retrieved_at": "2026-11-12T06:49:00.183411+00:00",
+    "bytes": 22,
+    "sha256": "21947b02ead137acb20e602e9448c7c453b2836d1a755aadd5e1c61ecd2eb034",
+    "title": [],
+    "channel_ids": []
+  },
+  "channels": [
+    {
+      "name": "MasterShiny CS2",
+      "title": "MasterShiny CS2",
+      "channel_id": "UCVJDs5sp8yfXM_yAc9l10Jg",
+      "url": "https://www.youtube.com/channel/UCVJDs5sp8yfXM_yAc9l10Jg",
+      "handle_url": "https://www.youtube.com/@mastershiny",
+      "verified_at": "2026-11-12T06:50:14.630763+00:00",
+      "sha256": "793ec096aed3dc688a11d0de241996e27706860179c262231ad3e50c0022dc26"
+    },
+    {
+      "name": "rubyjetski",
+      "title": "rubyjetski",
+      "channel_id": "UCq5a9M4QwqDCXxMRFXFXdsg",
+      "url": "https://www.youtube.com/channel/UCq5a9M4QwqDCXxMRFXFXdsg",
+      "handle_url": "https://www.youtube.com/@rubyjetski",
+      "verified_at": "2026-11-12T06:50:19.466538+00:00",
+      "sha256": "fc313021c992e4962b629120f3cf4e82666e55a7a56e030c737895643e4bddbb"
+    },
+    {
+      "name": "IAMJERM - CS2",
+      "title": "IAMJERM - CS2",
+      "channel_id": "UCppZNWqOFNi2XrjKiOzKo4w",
+      "url": "https://www.youtube.com/channel/UCppZNWqOFNi2XrjKiOzKo4w",
+      "handle_url": "https://www.youtube.com/@iamjermcs",
+      "verified_at": "2026-11-12T06:50:24.711534+00:00",
+      "sha256": "be8a68e10f3766d4a439e73b1a4508ba9c33e7696c1078912c2b88ccbf3eebe7"
+    },
+    {
+      "name": "TDM_Heyzeus",
+      "title": "TDM_Heyzeus",
+      "channel_id": "UCFw7eDRrQrsFBJ_8YihFKaQ",
+      "url": "https://www.youtube.com/channel/UCFw7eDRrQrsFBJ_8YihFKaQ",
+      "handle_url": "https://www.youtube.com/@tdmheyzeus",
+      "verified_at": "2026-11-12T06:50:29.449612+00:00",
+      "sha256": "cbad2f06da8778d1145caabfb80e3430fc4b13503f66db7ab8126326a3db2549"
+    },
+    {
+      "name": "LeChineur",
+      "title": "Le Chineur",
+      "channel_id": "UCNJq5bRYQ6tKQepW5dOUDQw",
+      "url": "https://www.youtube.com/channel/UCNJq5bRYQ6tKQepW5dOUDQw",
+      "handle_url": "https://www.youtube.com/@LeChineur",
+      "verified_at": "2026-11-12T06:50:34.522429+00:00",
+      "sha256": "eb550ec9e1b5b5cad32203e4316c36db49c5de6ec7f75fe3c99afb6bc241ce43"
+    }
+  ],
+  "channel_verification_method": "Primary YouTube channelMetadataRenderer externalId/title/owner page, not unrelated recommended-channel IDs.",
+  "manifest_timestamp_policy": "Verification converted to Europe/Paris wall time for the existing timezone-naive corpus contract; raw UTC retained in this evidence.",
+  "decision": "Both issues remain blocked: no usable Steam history, authorized transcript corpus or real empirical evaluation."
+}

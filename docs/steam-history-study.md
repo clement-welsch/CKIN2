@@ -2,6 +2,14 @@
 
 ## Current decision: no-go for anonymous history retrieval; graph validation remains pending
 
+Rechecked on 2026-11-12: the exact Recoil Case listing returned HTTP 200 with
+the same grouped listing redirect; no supported inline `var line1` declaration
+was detected. The anonymous history candidate again returned HTTP 400; its raw
+body hash matches the previously recorded failed response. This provides no
+usable historical series and does not establish a particular authentication
+requirement. See [request metadata](studies/2026-11-12-source-check.json).
+No graph comparisons, backfill or successful access claim follow from this check.
+
 A bounded real access study was performed on 2026-11-09 from the managed cloud
 network with enforced unrestricted HTTP policy. It was not a claim to be running
 inside the user's home network or a signed-in personal Steam browser. There

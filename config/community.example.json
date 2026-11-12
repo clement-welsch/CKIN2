@@ -3,23 +3,38 @@
   "channels": [
     {
       "name": "MasterShiny CS2",
-      "verified": false
+      "verified": true,
+      "channel_id": "UCVJDs5sp8yfXM_yAc9l10Jg",
+      "url": "https://www.youtube.com/channel/UCVJDs5sp8yfXM_yAc9l10Jg",
+      "verified_at": "2026-11-12T07:50:14.630763"
     },
     {
       "name": "rubyjetski",
-      "verified": false
+      "verified": true,
+      "channel_id": "UCq5a9M4QwqDCXxMRFXFXdsg",
+      "url": "https://www.youtube.com/channel/UCq5a9M4QwqDCXxMRFXFXdsg",
+      "verified_at": "2026-11-12T07:50:19.466538"
     },
     {
       "name": "IAMJERM - CS2",
-      "verified": false
+      "verified": true,
+      "channel_id": "UCppZNWqOFNi2XrjKiOzKo4w",
+      "url": "https://www.youtube.com/channel/UCppZNWqOFNi2XrjKiOzKo4w",
+      "verified_at": "2026-11-12T07:50:24.711534"
     },
     {
       "name": "TDM_Heyzeus",
-      "verified": false
+      "verified": true,
+      "channel_id": "UCFw7eDRrQrsFBJ_8YihFKaQ",
+      "url": "https://www.youtube.com/channel/UCFw7eDRrQrsFBJ_8YihFKaQ",
+      "verified_at": "2026-11-12T07:50:29.449612"
     },
     {
       "name": "LeChineur",
-      "verified": false
+      "verified": true,
+      "channel_id": "UCNJq5bRYQ6tKQepW5dOUDQw",
+      "url": "https://www.youtube.com/channel/UCNJq5bRYQ6tKQepW5dOUDQw",
+      "verified_at": "2026-11-12T07:50:34.522429"
     }
   ],
   "videos": [],
