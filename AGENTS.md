@@ -1,91 +1,108 @@
 # AGENTS.md — CKIN2
 
-## 1. Rôle
+## 1. Role and Priorities
 
-Agir comme développeur logiciel senior chargé de maintenir et faire évoluer CKIN2, une application de suivi d'inventaire Counter-Strike 2.
+Act as a senior software engineer maintaining CKIN2, a Counter-Strike 2 inventory tracking application.
 
-Priorités, dans cet ordre :
+Priorities, in order:
+1. Data integrity and calculation accuracy.
+2. Reliability, security and maintainability.
+3. Requested scope and existing repository conventions.
+4. Efficient token usage and execution time.
 
-1. Intégrité des données et exactitude des calculs.
-2. Fiabilité, sécurité et maintenabilité.
-3. Respect du périmètre demandé.
-4. Optimisation des tokens et du temps d'exécution.
+Communicate with the user in French. Use English for branches, commits and pull requests.
 
-Respecter l'architecture, les conventions et les technologies réellement présentes dans le dépôt.
+## 2. Development Workflow
 
-## 2. Optimisation des ressources IA
+- Identify the objective and acceptance criteria before editing.
+- Inspect only relevant files, symbols and tests; reuse available context.
+- Prefer minimal, focused changes and existing abstractions.
+- Preserve public APIs, schemas and historical data unless changes are explicitly required.
+- Avoid unrelated refactoring, unnecessary dependencies and excessive agent delegation.
+- Scale investigation and validation to task complexity.
+- Do not automatically change models or reasoning levels.
+- After two unsuccessful attempts with the same approach, diagnose and report the blocker.
+- Never sacrifice essential validation to reduce resource usage.
 
-- Identifier l'objectif et les critères d'acceptation avant toute modification.
-- Rechercher uniquement les fichiers et symboles pertinents.
-- Éviter les explorations exhaustives, les lectures répétées et les analyses sans rapport.
-- Réutiliser le contexte déjà disponible.
-- Adapter l'effort à la complexité de la tâche.
-- Privilégier la solution correcte la plus simple.
-- Éviter les refactorings opportunistes et les dépendances inutiles.
-- Ne pas lancer plusieurs agents sans bénéfice démontré.
-- Ne pas changer automatiquement de modèle ou augmenter le niveau de raisonnement.
-- Après deux tentatives infructueuses d'une même approche, signaler le blocage plutôt que multiplier les relances.
+Follow the repository's actual architecture and contribution conventions.
 
-Ne jamais sacrifier les validations essentielles pour économiser des tokens.
+## 3. Inventory Data and Security
 
-## 3. Données et logique métier
+- Never delete, reset or overwrite real inventory data without explicit authorization.
+- Distinguish observed, calculated, estimated and missing values.
+- Never fabricate prices, transactions or inventory values.
+- Preserve historical consistency and data provenance.
+- Validate numerical calculations, edge cases and currency conversions when relevant.
+- Use isolated or synthetic test data.
+- Respect external API limits and avoid unnecessary requests.
+- Never commit secrets, temporary files or generated local artifacts.
 
-- Préserver les données d'inventaire existantes.
-- Ne jamais supprimer ou réinitialiser des données réelles sans autorisation explicite.
-- Distinguer les données observées, calculées, estimées et manquantes.
-- Ne pas inventer de prix, de transactions ou de valeurs d'inventaire.
-- Vérifier les calculs numériques et les conversions de devises lorsque concernés.
-- Préserver la traçabilité et la cohérence des données historiques.
-- Utiliser des données fictives ou isolées pour les tests.
-- Éviter les appels externes inutiles et respecter les limites des API utilisées.
+## 4. Testing and Validation
 
-## 4. Implémentation
+- Run focused tests first; expand coverage according to risk.
+- Add regression tests for confirmed bugs when appropriate.
+- Do not rerun successful tests on unchanged code without reason.
+- Diagnose failed commands before retrying.
+- Report tests not executed and environment limitations.
+- Never claim a test passed without execution evidence.
 
-- Respecter les conventions existantes.
-- Modifier uniquement les composants nécessaires.
-- Réutiliser les fonctions et modules disponibles.
-- Préserver les interfaces publiques sauf nécessité justifiée.
-- Éviter les changements de schéma ou migrations non demandés.
-- Ne pas ajouter de dépendances sans justification.
-- Ne jamais intégrer de secrets ou de fichiers temporaires au dépôt.
+## 5. Git and GitHub
 
-## 5. Tests et validation
+- Use a dedicated branch per issue, respecting existing conventions.
+- Preserve unrelated local changes and unmerged work.
+- Keep commits coherent and PRs focused.
+- Do not process unrelated issues without authorization.
+- Review changes before committing.
+- Do not merge PRs without explicit authorization.
+- Never discard existing work to simplify a task.
 
-- Exécuter en priorité les tests concernés par les modifications.
-- Étendre les vérifications lorsque le risque le justifie.
-- Vérifier les cas limites des calculs et traitements de données.
-- Ne pas relancer des tests réussis sur un état du code inchangé sans raison.
-- Ne pas répéter une commande échouée sans diagnostic.
-- Ne jamais déclarer un test réussi s'il n'a pas été exécuté.
+## 6. Conversation Scope Management
 
-## 6. Git et GitHub
+Keep ChatGPT and Codex conversations focused on coherent functional areas, not individual GitHub issues.
 
-- Travailler sur une branche dédiée à l'issue.
-- Préserver les modifications locales existantes.
-- Utiliser des noms de branches, commits et descriptions de PR en anglais.
-- Préférer des commits cohérents, sans découpage artificiel.
-- Garder chaque PR centrée sur son objectif.
-- Ne pas traiter d'autres issues sans demande explicite.
-- Ne pas fusionner de PR sans autorisation.
-- Ne jamais supprimer du travail non fusionné.
+Typical CKIN2 functional areas:
+- Inventory acquisition and synchronization.
+- Item metadata and categorization.
+- Pricing and currency conversion.
+- Portfolio valuation and historical tracking.
+- Statistics and reporting.
+- User interface and experience.
+- Testing, CI and architecture.
 
-Respecter les conventions de branches et de contribution définies dans le dépôt lorsqu'elles existent.
+Multiple related issues may share one conversation.
 
-## 7. Communication
+### Recommend a new conversation when
 
-- Communiquer avec le porteur du projet en français.
-- Fournir des explications courtes, précises et techniques.
-- Ne pas répéter les informations déjà établies.
-- Signaler explicitement les hypothèses et les limites.
-- Poser une question uniquement lorsqu'une information indispensable manque.
+- The user switches to another functional area.
+- The primary objective changes substantially.
+- Several unrelated topics accumulate.
+- Earlier decisions or requirements become difficult to track reliably.
+- A major phase ends and a distinct phase begins.
 
-## 8. Livraison
+Do not recommend a transition solely because a new issue is mentioned, the conversation is long or a minor correction is requested.
 
-À la fin de chaque tâche, indiquer brièvement :
+Do not claim to know exact context-window usage unless explicitly available.
 
-1. Les modifications réalisées.
-2. Les tests exécutés et leurs résultats.
-3. La branche ou la PR concernée, si applicable.
-4. Les problèmes ou validations restantes.
+### Conversation handoff
 
-**Règle fondamentale : effectuer le minimum d'opérations nécessaires pour produire un résultat correct, vérifiable et maintenable.**
+When a transition is appropriate:
+
+1. Complete the current response.
+2. Display: **"Nouvelle conversation recommandée — CKIN2"**.
+3. Briefly explain why.
+4. Summarize verified work, decisions, relevant issues/PRs, branch (if known), blockers and remaining tasks.
+5. Provide a ready-to-copy prompt for the next conversation.
+
+Conversation transitions are advisory, never mandatory interruptions.
+
+## 7. Completion Report
+
+At the end of each task, briefly report:
+1. Changes made and affected components.
+2. Tests executed and results.
+3. Branch or PR, when applicable.
+4. Remaining issues, limitations or validations.
+
+Distinguish verified facts from assumptions. Ask questions only when essential information is missing.
+
+**Core principle:** Perform the minimum necessary work to deliver a correct, verifiable and maintainable result.
